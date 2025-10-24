@@ -1,0 +1,9 @@
+Copyright © 2025 [Your Name or Company]. All Rights Reserved.
+
+This software and its source code are proprietary and confidential.
+Unauthorized copying, modification, distribution, or use of this software,
+in whole or in part, is strictly prohibited without written permission
+from the copyright holder.
+
+This software is licensed, not sold. Ownership of all intellectual property
+remains with the author.
