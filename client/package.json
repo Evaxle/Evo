@@ -1,0 +1,12 @@
+{
+  "name": "evo-client",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build-css": "sass styles.scss styles.css --no-source-map",
+    "start": "echo 'client is static; open index.html'"
+  },
+  "devDependencies": {
+    "sass": "^1.73.1"
+  }
+}

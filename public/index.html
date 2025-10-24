@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Evo — Editor</title>
+  <link rel="stylesheet" href="raw-styles.css">
+  <script src="raw-editor.js" defer></script>
+  <script src="/vs/loader.js"></script>
+  <script src="script.js" defer></script>
+  <style>
+    .project-header { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#111; color:#fff }
+    .project-header h2 { margin:0; font-size:18px }
+    .project-header button { background:transparent; color:#0ea5a8; border:none; cursor:pointer }
+  </style>
+</head>
+<body>
+  <div class="project-header">
+    <h2 id="projName">Project</h2>
+    <div>
+      <button id="btnBack">Back</button>
+    </div>
+  </div>
+
+  <div class="top-bar">
+    <button id="saveBtn">Save Locally</button>
+    <button id="saveToAccountBtn">Save to Account</button>
+      <button id="commitGithubBtn">Commit to GitHub</button>
+    <button id="saveAsBtn">Save As</button>
+    <button id="openFileBtn">Open File</button>
+    <button id="runHtmlBtn">Run HTML</button>
+    <button id="runJsBtn">Run JS</button>
+    <button id="runPythonBtn">Run Python</button>
+    <button id="viewHistoryBtn">History</button>
+    <button id="settingsBtn">Settings</button>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="editor-container">
+    <div class="editor-pane">
+      <div class="line-numbers" id="lineNumbers"></div>
+      <div id="monacoContainer" style="width:100%; height:100%; display:none;"></div>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </div>
+    <iframe id="livePreview" style="display:none;"></iframe>
+  </div>
+
+  <div class="footer-bar">
+    <div id="langDisplay">Language: text</div>
+    <select id="langSelector">
+      <option value="text">Text</option>
+      <option value="html">HTML</option>
+      <option value="js">JavaScript</option>
+      <option value="python">Python</option>
+    </select>
+    <button id="togglePreviewBtn">Toggle Preview</button>
+  </div>
+
+  <script>
+    // Adapter: load project from server or use local savedcontent, then instantiate EditorApp
+    (async function(){
+      const id = localStorage.getItem('evo_open_project');
+      let tabs = null;
+      let projName = 'Project';
+
+      if (id) {
+        // load from server
+        try {
+          const res = await fetch('http://localhost:8080/api/projects/' + id, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('evo_token') } });
+          if (!res.ok) throw new Error('Could not load project');
+          const body = await res.json();
+          const project = body.project;
+          projName = project.name || 'Project';
+          // project.content can be string or object. If object with 'files' or mapping, use it.
+          let filesMap = {};
+          if (project.content && typeof project.content === 'object') {
+            filesMap = project.content.files || project.content;
+          } else if (typeof project.content === 'string' && project.content.trim()) {
+            filesMap['main.txt'] = { content: project.content, language: 'text', path: null };
+          } else {
+            filesMap['main.txt'] = { content: '', language: 'text', path: null };
+          }
+          tabs = {};
+          Object.keys(filesMap).forEach(fn => {
+            const f = filesMap[fn];
+            tabs[fn] = { content: f.content || '', path: f.path || fn, language: f.language || (fn.endsWith('.html')? 'html' : fn.endsWith('.js')? 'js' : 'text') }
+          })
+        } catch (err) {
+          console.error(err);
+          document.getElementById('projName').textContent = 'Failed to load project';
+          return;
+        }
+      } else {
+        // no server project selected; try local savedcontent
+        const saved = localStorage.getItem('savedcontent');
+        if (!saved) { document.getElementById('projName').textContent = 'No project selected'; return; }
+        tabs = JSON.parse(saved);
+        projName = 'Local files';
+      }
+
+      // Convert tabs into savedcontent format and store
+      localStorage.setItem('savedcontent', JSON.stringify(tabs || {}));
+      document.getElementById('projName').textContent = projName;
+
+        // instantiate editor
+      const app = new EditorApp()
+
+      // Save locally: update savedcontent with current editor content for the active tab
+      app.saveLocal = function(){
+        if (!this.currentTab) return
+        const tabs = this.getTabs()
+        tabs[this.currentTab].content = this.editor.value
+        localStorage.setItem('savedcontent', JSON.stringify(tabs))
+        this.showPopup('Saved locally')
+      }
+
+      // Save to account: if project exists on server update it, otherwise create a new project
+      app.saveToAccount = async function(){
+        const token = localStorage.getItem('evo_token')
+        if (!token) { this.showPopup('Login required'); setTimeout(()=> location.href = '/projects.html',1000); return }
+        const tabs = this.getTabs()
+        const payloadFiles = {}
+        Object.keys(tabs).forEach(k => { payloadFiles[k] = { content: tabs[k].content, language: tabs[k].language, path: tabs[k].path } })
+        try {
+          if (!id) {
+            // create new project
+            const resp = await fetch('http://localhost:8080/api/projects', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+              body: JSON.stringify({ name: 'Imported Project', content: { files: payloadFiles } })
+            })
+            const j = await resp.json()
+            if (!resp.ok) throw new Error(j.error || 'create failed')
+            localStorage.setItem('evo_open_project', j.project.id)
+            this.showPopup('Created project on account')
+          } else {
+            const resp = await fetch('http://localhost:8080/api/projects/' + id, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+              body: JSON.stringify({ content: { files: payloadFiles } })
+            })
+            const j = await resp.json()
+            if (!resp.ok) throw new Error(j.error || 'save failed')
+            this.showPopup('Saved to account')
+          }
+        } catch (e) { console.error(e); this.showPopup('Save failed') }
+      }
+
+        // Wire UI buttons
+      document.getElementById('saveBtn').addEventListener('click', () => app.saveLocal())
+      document.getElementById('saveToAccountBtn').addEventListener('click', () => app.saveToAccount())
+      const commitBtn = document.getElementById('commitGithubBtn')
+      if (commitBtn) commitBtn.addEventListener('click', () => app.commitToGitHub())
+
+
+      document.getElementById('btnBack').addEventListener('click', () => { location.href = '/projects.html' })
+
+    })()
+  </script>
+</body>
+</html>

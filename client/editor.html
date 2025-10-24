@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Evo — Editor</title>
+  <link rel="stylesheet" href="raw-styles.css">
+  <script src="raw-editor.js" defer></script>
+  <script src="script.js" defer></script>
+  <style>
+    .project-header { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#111; color:#fff }
+    .project-header h2 { margin:0; font-size:18px }
+    .project-header button { background:transparent; color:#0ea5a8; border:none; cursor:pointer }
+  </style>
+</head>
+<body>
+  <div class="project-header">
+    <h2 id="projName">Project</h2>
+    <div>
+      <button id="btnBack">Back</button>
+    </div>
+  </div>
+
+  <div class="top-bar">
+    <button id="saveBtn">Save</button>
+    <button id="saveAsBtn">Save As</button>
+    <button id="openFileBtn">Open File</button>
+    <button id="runHtmlBtn">Run HTML</button>
+    <button id="runJsBtn">Run JS</button>
+    <button id="runPythonBtn">Run Python</button>
+    <button id="viewHistoryBtn">History</button>
+    <button id="settingsBtn">Settings</button>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="editor-container">
+    <div class="editor-pane">
+      <div class="line-numbers" id="lineNumbers"></div>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </div>
+    <iframe id="livePreview" style="display:none;"></iframe>
+  </div>
+
+  <div class="footer-bar">
+    <div id="langDisplay">Language: text</div>
+    <select id="langSelector">
+      <option value="text">Text</option>
+      <option value="html">HTML</option>
+      <option value="js">JavaScript</option>
+      <option value="python">Python</option>
+    </select>
+    <button id="togglePreviewBtn">Toggle Preview</button>
+  </div>
+
+  <script>
+    // Adapter: load project from server, populate local savedcontent map, then instantiate EditorApp
+    (async function(){
+      const id = localStorage.getItem('evo_open_project');
+      if (!id) { document.getElementById('projName').textContent = 'No project selected'; return; }
+      try {
+        const res = await fetch('/api/projects/' + id, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('evo_token') } });
+        if (!res.ok) { throw new Error('Could not load project'); }
+        const body = await res.json();
+        const project = body.project;
+        document.getElementById('projName').textContent = project.name || 'Project';
+        // project.content can be string or object. If object with 'files' or mapping, use it.
+        let filesMap = {};
+        if (project.content && typeof project.content === 'object') {
+          // if it already is a mapping of filename -> { content, language }
+          filesMap = project.content.files || project.content;
+        } else if (typeof project.content === 'string' && project.content.trim()) {
+          // legacy: single file content, put into "main.txt"
+          filesMap['main.txt'] = { content: project.content, language: 'text', path: null };
+        } else {
+          filesMap['main.txt'] = { content: '', language: 'text', path: null };
+        }
+
+        // Convert filesMap into savedcontent format expected by Raw Editor (tabName -> {content, path, language})
+        const tabs = {}
+        Object.keys(filesMap).forEach(fn => {
+          const f = filesMap[fn];
+          tabs[fn] = { content: f.content || '', path: f.path || fn, language: f.language || deriveLangFromName(fn) }
+        })
+        localStorage.setItem('savedcontent', JSON.stringify(tabs))
+
+        // instantiate editor
+        const app = new EditorApp()
+
+        // wire save to update server project: collect files and PUT to /api/projects/:id
+        app.saveFile = async function(){
+          if (!this.currentTab) return
+          const tabs = this.getTabs()
+          const payloadFiles = {}
+          Object.keys(tabs).forEach(k => { payloadFiles[k] = { content: tabs[k].content, language: tabs[k].language, path: tabs[k].path } })
+          try {
+            const resp = await fetch('/api/projects/' + id, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('evo_token') },
+              body: JSON.stringify({ content: { files: payloadFiles } })
+            })
+            if (!resp.ok) throw new Error('save failed')
+            this.showPopup('Saved to server')
+          } catch (e) { this.showPopup('Save failed') }
+        }
+
+        // wire saveAs to also persist locally and server
+        app.saveAs = async function(){
+          const filename = prompt('Save as filename')
+          if (!filename) return
+          const tabs = this.getTabs()
+          tabs[this.currentTab].path = filename
+          tabs[this.currentTab].content = this.editor.value
+          localStorage.setItem('savedcontent', JSON.stringify(tabs))
+          // persist to server
+          const payloadFiles = {}
+          Object.keys(tabs).forEach(k => { payloadFiles[k] = { content: tabs[k].content, language: tabs[k].language, path: tabs[k].path } })
+          try {
+            const resp = await fetch('/api/projects/' + id, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('evo_token') },
+              body: JSON.stringify({ content: { files: payloadFiles } })
+            })
+            if (!resp.ok) throw new Error('save failed')
+            this.showPopup('Saved As and persisted')
+          } catch (e) { this.showPopup('Save failed') }
+        }
+
+        document.getElementById('btnBack').addEventListener('click', () => { location.href = '/' })
+
+        function deriveLangFromName(name) {
+          if (name.endsWith('.html')) return 'html'
+          if (name.endsWith('.js')) return 'js'
+          if (name.endsWith('.py')) return 'python'
+          return 'text'
+        }
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('projName').textContent = 'Failed to load project';
+      }
+    })()
+  </script>
+</body>
+</html>
