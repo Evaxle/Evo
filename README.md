@@ -1,4 +1,4 @@
-# Evo — User creation example
+# Evo
 
 This adds a simple user creation / authentication system using the existing `server/data/evo.db` (SQLite) by default, and an optional MongoDB backend for deployment on Vercel using the Vercel Storage MongoDB integration.
 
