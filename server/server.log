@@ -1,6 +1,5 @@
 Server listening on 3000
 DB initialized
-[Error: SQLITE_CONSTRAINT: NOT NULL constraint failed: users.password_hash] {
-  errno: 19,
-  code: 'SQLITE_CONSTRAINT'
-}
+ReferenceError: originalCols is not defined
+    at Object.createUser (/workspaces/Evo/server/db/sqlite.js:44:18)
+    at async /workspaces/Evo/server/index.js:47:18

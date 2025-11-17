@@ -5,6 +5,7 @@ const path = require('path');
 
 let db;
 let tableCols = null;
+let origTableCols = null;
 
 async function init() {
   const dbPath = process.env.SQLITE_DB_PATH || path.join(__dirname, '..', 'data', 'evo.db');
@@ -20,6 +21,7 @@ async function init() {
   const colNames = cols.map(c => c.name);
   // remember original columns before we add any
   const originalCols = [...colNames];
+  origTableCols = originalCols;
   tableCols = colNames;
   if (!colNames.includes('password')) {
     await db.run("ALTER TABLE users ADD COLUMN password TEXT");
