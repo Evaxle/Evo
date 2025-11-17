@@ -18,6 +18,8 @@ async function init() {
   // Inspect columns and add the ones we expect if missing
   const cols = await db.all("PRAGMA table_info('users')");
   const colNames = cols.map(c => c.name);
+  // remember original columns before we add any
+  const originalCols = [...colNames];
   tableCols = colNames;
   if (!colNames.includes('password')) {
     await db.run("ALTER TABLE users ADD COLUMN password TEXT");
@@ -36,7 +38,8 @@ async function init() {
 async function createUser({ email, password, name }) {
   const hashed = await bcrypt.hash(password, 10);
   // choose the password column name used by the DB
-  const pwdCol = (tableCols && tableCols.includes('password')) ? 'password' : ((tableCols && tableCols.includes('password_hash')) ? 'password_hash' : 'password');
+  // prefer existing password_hash column if it already existed (NOT NULL constraint may be present)
+  const pwdCol = (originalCols && originalCols.includes('password_hash')) ? 'password_hash' : ((tableCols && tableCols.includes('password')) ? 'password' : ((tableCols && tableCols.includes('password_hash')) ? 'password_hash' : 'password'));
   const dataCol = (tableCols && tableCols.includes('data')) ? 'data' : null;
   const cols = ['email', pwdCol, 'name'].concat(dataCol ? [dataCol] : []);
   const placeholders = cols.map(_ => '?').join(',');
