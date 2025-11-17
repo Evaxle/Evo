@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sign In</title>
+  </head>
+  <body>
+    <h1>Sign In</h1>
+    <form id="signin">
+      <label>Email: <input type="email" name="email" required></label><br>
+      <label>Password: <input type="password" name="password" required></label><br>
+      <button type="submit">Sign In</button>
+    </form>
+    <div id="msg"></div>
+    <script>
+      const form = document.getElementById('signin');
+      const msg = document.getElementById('msg');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const body = { email: fd.get('email'), password: fd.get('password') };
+        const res = await fetch('/api/signin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (!res.ok) {
+          msg.textContent = data.error || JSON.stringify(data);
+          return;
+        }
+        localStorage.setItem('token', data.token);
+        msg.textContent = 'Signed in! Token stored in localStorage.';
+      });
+    </script>
+  </body>
+</html>

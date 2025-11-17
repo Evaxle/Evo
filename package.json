@@ -1,11 +1,14 @@
 {
-  "name": "evo-frontend-build",
-  "version": "0.1.0",
+  "name": "evo-root",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "postinstall": "node ./scripts/copy-monaco.js || true"
+    "start": "node server/index.js"
   },
   "dependencies": {
-    "monaco-editor": "latest"
+    "bcrypt": "^5.1.0",
+    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.0",
+    "mongodb": "^5.8.0"
   }
 }

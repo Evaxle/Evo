@@ -1,0 +1,6 @@
+Server listening on 3000
+DB initialized
+[Error: SQLITE_CONSTRAINT: NOT NULL constraint failed: users.password_hash] {
+  errno: 19,
+  code: 'SQLITE_CONSTRAINT'
+}

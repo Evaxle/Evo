@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sign Up</title>
+  </head>
+  <body>
+    <h1>Sign Up</h1>
+    <form id="signup">
+      <label>Email: <input type="email" name="email" required></label><br>
+      <label>Name: <input type="text" name="name"></label><br>
+      <label>Password: <input type="password" name="password" required></label><br>
+      <button type="submit">Sign Up</button>
+    </form>
+    <div id="msg"></div>
+    <script>
+      const form = document.getElementById('signup');
+      const msg = document.getElementById('msg');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const body = { email: fd.get('email'), name: fd.get('name'), password: fd.get('password') };
+        const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (!res.ok) {
+          msg.textContent = data.error || JSON.stringify(data);
+          return;
+        }
+        localStorage.setItem('token', data.token);
+        msg.textContent = 'Signed up! Token stored in localStorage.';
+      });
+    </script>
+  </body>
+</html>
