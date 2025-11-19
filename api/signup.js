@@ -1,4 +1,4 @@
-const db = require('../server/db/mongo');
+const db = require('../server/db/sqlite');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
-    await db.init();
+  await db.init();
     const { email, password, name } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'email and password required' });
     const exists = await db.findUserByEmail(email);

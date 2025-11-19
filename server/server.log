@@ -1,5 +1,14 @@
+nohup: ignoring input
+Email transporter not configured — codes will be logged to console
 Server listening on 3000
 DB initialized
-ReferenceError: originalCols is not defined
-    at Object.createUser (/workspaces/Evo/server/db/sqlite.js:44:18)
-    at async /workspaces/Evo/server/index.js:47:18
+(dev) sending email to cleanup_test@example.com: Your signin code is: 150176
+It expires in 10 minutes.
+(dev) sending email to cleanup_test@example.com: Your signin code is: 239905
+It expires in 10 minutes.
+(dev) sending email to cleanup_test@example.com: Your signin code is: 970061
+It expires in 10 minutes.
+(dev) sending email to twofa_test@example.com: Your signin code is: 726719
+It expires in 10 minutes.
+(dev) sending email to twofa_test@example.com: Your signin code is: 811931
+It expires in 10 minutes.

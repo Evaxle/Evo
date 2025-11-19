@@ -26,9 +26,17 @@
           msg.textContent = data.error || JSON.stringify(data);
           return;
         }
+        // Save token and user to localStorage for persistence
         localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
         msg.textContent = 'Signed up! Token stored in localStorage.';
       });
+
+      // If token is already present, show message
+      if (localStorage.getItem('token')) {
+        const u = JSON.parse(localStorage.getItem('user') || 'null');
+        if (u) msg.textContent = `Already signed in as ${u.email}`;
+      }
     </script>
   </body>
 </html>

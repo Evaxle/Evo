@@ -7,6 +7,36 @@ const app = document.getElementById('app');
 document.getElementById('toSignup').onclick = () => showSignup();
 document.getElementById('toSignin').onclick = () => showSignin();
 
+// On load: if token present, fetch /api/me and show current user
+async function loadCurrentUser() {
+  const token = localStorage.getItem('token');
+  const statusEl = document.getElementById('current');
+  if (!token) {
+    if (statusEl) statusEl.textContent = 'Not signed in';
+    return null;
+  }
+  try {
+    const res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      if (statusEl) statusEl.textContent = 'Token invalid or expired';
+      return null;
+    }
+    const u = await res.json();
+    if (statusEl) statusEl.textContent = `Signed in: ${u.email} (id: ${u.id})`;
+    return u;
+  } catch (err) {
+    if (statusEl) statusEl.textContent = 'Error fetching user';
+    return null;
+  }
+}
+
+const statusWrap = document.createElement('div');
+statusWrap.id = 'status';
+statusWrap.innerHTML = '<div id="current">Checking...</div><button id="signout">Sign out</button>';
+app.parentNode.insertBefore(statusWrap, app);
+document.getElementById('signout').onclick = () => { localStorage.removeItem('token'); document.getElementById('current').textContent = 'Signed out'; };
+loadCurrentUser();
+
 function showSignup() {
   app.innerHTML = `
     <h2>Sign up</h2>
@@ -26,7 +56,10 @@ function showSignup() {
     const body = { email: fd.get('email'), name: fd.get('name'), password: fd.get('password') };
     const r = await postJson('/api/signup', body);
     out.textContent = JSON.stringify(r, null, 2);
-    if (r.ok) localStorage.setItem('token', r.body.token);
+    if (r.ok) {
+      localStorage.setItem('token', r.body.token);
+      await loadCurrentUser();
+    }
   };
 }
 
@@ -48,7 +81,10 @@ function showSignin() {
     const body = { email: fd.get('email'), password: fd.get('password') };
     const r = await postJson('/api/signin', body);
     out.textContent = JSON.stringify(r, null, 2);
-    if (r.ok) localStorage.setItem('token', r.body.token);
+    if (r.ok) {
+      localStorage.setItem('token', r.body.token);
+      await loadCurrentUser();
+    }
   };
 }
 

@@ -1,11 +1,11 @@
 # Evo
 
-This adds a simple user creation / authentication system using the existing `server/data/evo.db` (SQLite) by default, and an optional MongoDB backend for deployment on Vercel using the Vercel Storage MongoDB integration.
+This adds a simple user creation / authentication system using the existing `server/data/evo.db` (SQLite).
 
 ## What I added
 - `server/index.js` — Express API with endpoints: `/api/signup`, `/api/signin`, `/api/me`, and `/api/me/data`.
 - `server/db/sqlite.js` — uses the existing `server/data/evo.db` for user storage.
-- `server/db/mongo.js` — MongoDB-backed implementation (used when `MONGODB_URI` is provided).
+Note: This repository now uses SQLite only. MongoDB-related files were removed or deprecated.
 - `server/public/signup.html` and `server/public/signin.html` — minimal frontend pages that call the API and store a JWT in localStorage.
 - `server/package.json` — dependencies and scripts.
 
@@ -26,20 +26,20 @@ npm run dev
 
 3. Open `http://localhost:3000/signup.html` or `signin.html` to try the flows.
 
-## Deploying on Vercel with MongoDB (Vercel Storage)
+## Running on a local machine (SQLite)
 
-If you want to use Vercel's MongoDB storage, configure an environment variable in your Vercel Project settings named `MONGODB_URI` with the connection string provided by the Vercel Storage MongoDB integration. Example env var name: `MONGODB_URI`.
+The server uses the SQLite database file at `server/data/evo.db` by default. If that file is read-only, you can point the server at a writable copy using the `SQLITE_DB_PATH` environment variable. Example:
 
-Also set `JWT_SECRET` to a secure random value in Vercel's environment variables.
+```bash
+# start server using a local writable DB file
+SQLITE_DB_PATH=/full/path/to/evo_local.db npm start
+```
 
-The server will automatically switch to MongoDB when `MONGODB_URI` is present.
-
-Notes:
-- The MongoDB module stores user IDs as ObjectId strings. Tokens contain `id` (string) and `email`.
-- You can keep using the static `signup.html` and `signin.html` pages as-is (they POST to `/api/*`). On Vercel, consider using Next.js or serverless functions for tighter integration.
+Make sure to set `JWT_SECRET` in production.
 
 ## Security / next steps
 
+Security / next steps:
 - Use secure cookies (HttpOnly, Secure) instead of localStorage for tokens in production.
 - Add email verification, rate limiting, and stronger password policies.
 - Add tests.
