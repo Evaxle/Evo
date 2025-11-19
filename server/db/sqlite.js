@@ -2,13 +2,46 @@ const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const bcrypt = require('bcrypt');
 const path = require('path');
+const fs = require('fs');
 
 let db;
 let tableCols = null;
 let origTableCols = null;
 
 async function init() {
-  const dbPath = process.env.SQLITE_DB_PATH || path.join(__dirname, '..', 'data', 'evo.db');
+  // Determine DB path. Prefer environment override. If the bundled DB is
+  // present but read-only (common in some containers), create a writable copy
+  // at the repo root called `evo_local.db` and use that instead.
+  const bundled = path.join(__dirname, '..', 'data', 'evo.db');
+  const fallback = path.resolve(__dirname, '..', '..', 'evo_local.db');
+  let dbPath = process.env.SQLITE_DB_PATH || bundled;
+
+  if (!process.env.SQLITE_DB_PATH) {
+    try {
+      // check writability of chosen path
+      await fs.promises.access(dbPath, fs.constants.W_OK);
+      // writable, continue
+    } catch (err) {
+      // not writable or doesn't exist. If bundled exists, copy it to fallback
+      try {
+        await fs.promises.access(bundled, fs.constants.F_OK);
+        // copy bundled -> fallback if fallback missing
+        try {
+          await fs.promises.access(fallback, fs.constants.F_OK);
+        } catch (_) {
+          // copy file (if bundled is read-only, copy will still read it)
+          await fs.promises.copyFile(bundled, fallback);
+          // make sure fallback is writable
+          try { await fs.promises.chmod(fallback, 0o664); } catch (e) { /* ignore */ }
+        }
+        dbPath = fallback;
+      } catch (e) {
+        // bundled doesn't exist; use fallback (will be created on open)
+        dbPath = fallback;
+      }
+    }
+  }
+
   db = await open({ filename: dbPath, driver: sqlite3.Database });
   // Create table if missing. If table exists but is missing columns, attempt simple migration by adding columns.
   await db.run(`CREATE TABLE IF NOT EXISTS users (
