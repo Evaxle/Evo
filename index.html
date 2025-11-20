@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Monaco Notepad</title>
+<style>
+body { margin:0; display:flex; flex-direction:column; height:100vh; font-family:"Segoe UI",Arial,sans-serif; color:#fff; background:#141414 }
+#toolbar { background:#1e1e1e; padding:10px; display:flex; gap:10px; align-items:center; border-bottom:1px solid #333 }
+#toolbar button, #toolbar select { padding:8px 12px; border:none; border-radius:6px; background:#2a2a2a; color:#fff; cursor:pointer }
+#toolbar button:hover, #toolbar select:hover { background:#3a3a3a }
+#tabs { display:flex; gap:6px; padding:8px 10px; background:#181818; border-bottom:1px solid #333; overflow-x:auto }
+.tab { padding:6px 12px; border-radius:6px; background:#222; color:#ccc; cursor:pointer; display:flex; align-items:center; gap:6px }
+.tab.active { background:#333; color:#fff }
+.tab .close { cursor:pointer; color:#aaa }
+.tab .close:hover { color:#fff }
+#editor { flex:1 }
+#statusBar { background:#1e1e1e; padding:6px 10px; font-size:12px; color:#bbb; display:flex; justify-content:flex-start; align-items:center; gap:6px }
+.langIcon { font-weight:bold }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+<div id="toolbar">
+  <button onclick="newTab()">New Tab</button>
+  <button onclick="openFile()">Open File</button>
+  <button onclick="saveFile()">Save As</button>
+  <button onclick="runCode()">Run HTML</button>
+  <label style="margin-left:auto">Run Mode:
+    <select id="runMode">
+      <option value="popup">Popup</option>
+      <option value="tab">New Tab</option>
+    </select>
+  </label>
+</div>
+<div id="tabs"></div>
+<div id="editor"></div>
+<div id="statusBar"><span id="langIcon">🌐</span><span id="langDisplay">Language: HTML</span></div>
+
+<script>
+let editor, tabs = [], activeIndex = -1
+
+const langIcons = {
+  html:"🌐", javascript:"📜", css:"🎨", json:"🗂️", markdown:"📝",
+  typescript:"🔧", python:"🐍", xml:"📄", yaml:"📘"
+}
+
+require.config({ paths:{ 'vs':'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } })
+require(['vs/editor/editor.main'], function() {
+  loadTabs()
+  if (tabs.length === 0) newTab()
+  renderTabs()
+  if (tabs.length > 0) setActive(0)
+})
+
+function loadTabs() { tabs = JSON.parse(localStorage.getItem('monaco-tabs') || '[]') }
+function saveTabs() { localStorage.setItem('monaco-tabs', JSON.stringify(tabs)) }
+
+function newTab() {
+  let name = prompt("Enter tab name (without extension):","Untitled")
+  if (!name) name = "Untitled"
+  let lang = prompt("Enter language (html, js, css, json, md, ts, py, xml, yaml):","html")
+  if (!lang) lang = "html"
+  lang = guessLang("file." + lang)
+  const ext = extForLang(lang)
+  const tpl = getTemplate(lang)
+  tabs.push({ name:name + "." + ext, language:lang, content:tpl, id:Date.now() })
+  saveTabs(); renderTabs(); setActive(tabs.length - 1)
+}
+
+function renderTabs() {
+  const el = document.getElementById('tabs')
+  el.innerHTML = ''
+  tabs.forEach((t,i) => {
+    const d = document.createElement('div')
+    d.className = 'tab' + (i === activeIndex ? ' active' : '')
+    d.innerHTML = `<span>${langIcons[t.language]||"📄"}</span><span>${t.name}</span><span class="close" onclick="closeTab(event,${i})">×</span>`
+    d.onclick = () => setActive(i)
+    el.appendChild(d)
+  })
+}
+
+function setActive(idx) {
+  activeIndex = idx
+  const t = tabs[idx]
+  if (!editor) {
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      value:t.content, language:t.language, theme:'vs-dark', automaticLayout:true
+    })
+    editor.onDidChangeModelContent(() => {
+      tabs[activeIndex].content = editor.getValue()
+      saveTabs()
+    })
+  } else {
+    const model = monaco.editor.createModel(t.content, t.language)
+    editor.setModel(model)
+  }
+  document.getElementById('langDisplay').textContent = "Language: " + t.language.toUpperCase()
+  document.getElementById('langIcon').textContent = langIcons[t.language] || "📄"
+  renderTabs()
+}
+
+async function openFile() {
+  try {
+    const [h] = await window.showOpenFilePicker({
+      types:[{ description:'Code', accept:{
+        'text/html':['.html'], 'text/css':['.css'], 'text/javascript':['.js'],
+        'application/json':['.json'], 'text/x-python':['.py'],
+        'text/yaml':['.yml','.yaml'], 'text/plain':['.txt','.md']
+      }}]
+    })
+    const f = await h.getFile()
+    const t = await f.text()
+    const name = f.name
+    const lang = guessLang(name)
+    tabs.push({ name, language:lang, content:t, id:Date.now() })
+    saveTabs(); renderTabs(); setActive(tabs.length - 1)
+  } catch(e) {}
+}
+
+async function saveFile() {
+  try {
+    const t = tabs[activeIndex]
+    const mime = langToMime(t.language)
+    const handle = await window.showSaveFilePicker({
+      types:[{ description:'Save', accept:{ [mime]:['.' + extForLang(t.language)] } }],
+      suggestedName:t.name
+    })
+    const w = await handle.createWritable()
+    await w.write(editor.getValue())
+    await w.close()
+    const file = await handle.getFile()
+    t.name = file.name
+    saveTabs(); renderTabs()
+  } catch(e) { console.error(e) }
+}
+
+function closeTab(ev, idx) {
+  ev.stopPropagation()
+  tabs.splice(idx,1)
+  if (tabs.length === 0) { newTab(); return }
+  if (activeIndex >= tabs.length) activeIndex = tabs.length - 1
+  saveTabs(); renderTabs(); setActive(activeIndex)
+}
+
+function runCode() {
+  const t = tabs[activeIndex]
+  if (t.language !== 'html') { alert("Run HTML only works on HTML tabs"); return }
+  let html = t.content
+  const cssTabs = tabs.filter(tab => tab.language === 'css')
+  if (cssTabs.length > 0) {
+    const styles = cssTabs.map(tab => "<style>" + tab.content + "</style>").join("\n")
+    if (html.includes("</head>")) html = html.replace("</head>", styles + "</head>")
+    else html = "<head>" + styles + "</head>" + html
+  }
+  const mode = document.getElementById('runMode').value
+  if (mode === "popup") {
+    const p = window.open("about:blank","popup","width=900,height=700")
+    p.document.write(html); p.document.close()
+  } else {
+    const w = window.open("about:blank","_blank")
+    w.document.write(html); w.document.close()
+  }
+}
+
+function guessLang(name) {
+  const ext = name.split('.').pop().toLowerCase()
+  const map = { html:'html', htm:'html', js:'javascript', ts:'typescript', css:'css',
+                json:'json', md:'markdown', py:'python', xml:'xml', yaml:'yaml',
+                yml:'yaml', txt:'markdown' }
+  return map[ext] || 'markdown'
+}
+
+function extForLang(lang) {
+  const map = { html:'html', javascript:'js', typescript:'ts', css:'css', json:'json',
+                markdown:'md', python:'py', xml:'xml', yaml:'yml' }
+  return map[lang] || 'txt'
+}
+
+function langToMime(lang) {
+  const map = { html:'text/html', javascript:'text/javascript', typescript:'text/plain',
+                css:'text/css', json:'application/json', markdown:'text/plain',
+                python:'text/x-python', xml:'application/xml', yaml:'text/yaml' }
+  return map[lang] || 'text/plain'
+}
+
+function getTemplate(lang) {
+  const T = {
+    html:`<!DOCTYPE html><html><head><title>Untitled</title></head><body><h1>Hello World</h1></body></html>`,
+    javascript:`console.log('Hello JS')`,
+    css:`body{font-family:Segoe UI}`,
+    json:`{"name":"example"}`,
+    markdown:`# New File`,
+    typescript:`const msg:string='Hello';console.log(msg)`,
+    python:`print("Hello Python")`,
+    xml:`<root></root>`,
+    yaml:`name: example`
+  }
+  return T[lang] || T.html
+}
+</script>
+</body>
+</html>
