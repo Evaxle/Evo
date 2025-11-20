@@ -12,10 +12,21 @@
       <label>Password: <input type="password" name="password" required></label><br>
       <button type="submit">Sign Up</button>
     </form>
+    <div id="codeBox" style="display:none">
+      <p>A code was sent to your email. Enter it below to complete signup.</p>
+      <form id="verify">
+        <label>Code: <input name="code" required></label>
+        <button type="submit">Verify</button>
+      </form>
+    </div>
     <div id="msg"></div>
     <script>
       const form = document.getElementById('signup');
+      const codeBox = document.getElementById('codeBox');
+      const verifyForm = document.getElementById('verify');
       const msg = document.getElementById('msg');
+      let pending = null; // store pending signup info
+
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(form);
@@ -26,10 +37,28 @@
           msg.textContent = data.error || JSON.stringify(data);
           return;
         }
-        // Save token and user to localStorage for persistence
+        pending = { email: body.email, type: 'signup' };
+        msg.textContent = 'Verification code sent — check your email.';
+        codeBox.style.display = 'block';
+        // In dev mode server returns debugCode in response
+        if (data.debugCode) {
+          msg.textContent += ' (dev code: ' + data.debugCode + ')';
+        }
+      });
+
+      verifyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!pending) return msg.textContent = 'No pending signup.';
+        const fd = new FormData(verifyForm);
+        const code = fd.get('code');
+        const res = await fetch('/api/verify-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: pending.email, code, type: pending.type }) });
+        const data = await res.json();
+        if (!res.ok) return msg.textContent = data.error || JSON.stringify(data);
+        // store token and user
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        msg.textContent = 'Signed up! Token stored in localStorage.';
+        msg.textContent = 'Signup complete — signed in as ' + data.user.email;
+        codeBox.style.display = 'none';
       });
 
       // If token is already present, show message

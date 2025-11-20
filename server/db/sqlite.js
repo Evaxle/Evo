@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3');
-const { open } = require('sqlite');
+// We prefer using sqlite3 directly and promisify its API to avoid optional
+// native dependencies like better-sqlite3 being pulled in by other packages.
 const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
@@ -42,7 +43,46 @@ async function init() {
     }
   }
 
-  db = await open({ filename: dbPath, driver: sqlite3.Database });
+  // Try opening DB file path. If permission errors or read-only, copy bundled DB to
+  // a writable fallback and open that.
+  async function openSqlite(dbFile) {
+    return new Promise((resolve, reject) => {
+      const flags = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
+      const conn = new sqlite3.Database(dbFile, flags, (err) => {
+        if (err) return reject(err);
+        // wrap run/get/all to return promises like the `sqlite` package
+        conn.runAsync = function (sql, params = []) {
+          return new Promise((res, rej) => conn.run(sql, params, function (err) { if (err) rej(err); else res(this); }));
+        };
+        conn.getAsync = function (sql, params = []) {
+          return new Promise((res, rej) => conn.get(sql, params, (err, row) => err ? rej(err) : res(row)));
+        };
+        conn.allAsync = function (sql, params = []) {
+          return new Promise((res, rej) => conn.all(sql, params, (err, rows) => err ? rej(err) : res(rows)));
+        };
+        // provide run/get/all aliases used in this module
+        conn.run = conn.runAsync;
+        conn.get = conn.getAsync;
+        conn.all = conn.allAsync;
+        resolve(conn);
+      });
+    });
+  }
+
+  try {
+    db = await openSqlite(dbPath);
+  } catch (openErr) {
+    console.warn('Could not open DB at', dbPath + ':', openErr && openErr.message);
+    try {
+      await fs.promises.access(bundled, fs.constants.F_OK);
+      try { await fs.promises.copyFile(bundled, fallback); } catch (copyErr) { console.warn('Copy bundled->fallback failed:', copyErr && copyErr.message); }
+      try { await fs.promises.chmod(fallback, 0o664); } catch (e) { /* ignore */ }
+      dbPath = fallback;
+    } catch (e) {
+      dbPath = fallback;
+    }
+    db = await openSqlite(dbPath);
+  }
   // Create table if missing. If table exists but is missing columns, attempt simple migration by adding columns.
   await db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

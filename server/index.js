@@ -5,8 +5,19 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 
-// Use only sqlite backend (cleaned up per request)
-const db = require('./db/sqlite');
+// Choose DB adapter: Turso/libSQL if TURSO_URL set, else local sqlite.
+let db;
+if (process.env.TURSO_URL || process.env.LIBSQL_URL || process.env.DATABASE_URL) {
+  try {
+    db = require('./db/turso');
+    console.log('Using Turso/libSQL adapter (TURSO_URL detected)');
+  } catch (e) {
+    console.warn('TURSO adapter not available, falling back to sqlite:', e && e.message);
+    db = require('./db/sqlite');
+  }
+} else {
+  db = require('./db/sqlite');
+}
 const admins = require('./config/admins');
 const nodemailer = require('nodemailer');
 
@@ -18,7 +29,7 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(express.static('public'));
 
-// initialize DB (creates users collection/table if needed)
+// initialize DB (creates users table if needed)
 db.init().then(() => console.log('DB initialized')).catch(err => console.error('DB init error', err));
 
 // Email transporter (use env vars). If not configured, we'll fallback to logging the code
