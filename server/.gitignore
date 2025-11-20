@@ -1,0 +1,2 @@
+#.local env for server (contains secrets)
+/.env

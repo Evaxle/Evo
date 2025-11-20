@@ -9,9 +9,11 @@ const bcrypt = require('bcrypt');
 let client = null;
 
 function initFromEnv() {
-  const url = process.env.TURSO_URL || process.env.LIBSQL_URL || process.env.DATABASE_URL;
-  const token = process.env.TURSO_TOKEN || process.env.LIBSQL_TOKEN || process.env.DATABASE_AUTH_TOKEN;
-  if (!url) throw new Error('TURSO URL not set (set TURSO_URL or LIBSQL_URL)');
+  // Accept multiple common environment variable names (including the
+  // specific ones you provided: TURSO_DATABASE_URL and TURSO_AUTH_TOKEN).
+  const url = process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.LIBSQL_URL || process.env.DATABASE_URL;
+  const token = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || process.env.LIBSQL_TOKEN || process.env.DATABASE_AUTH_TOKEN;
+  if (!url) throw new Error('TURSO URL not set (set TURSO_DATABASE_URL or TURSO_URL)');
   client = createClient({
     url,
     auth: token ? { token } : undefined,
