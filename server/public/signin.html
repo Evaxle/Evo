@@ -2,64 +2,38 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Sign In</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Evo — Sign In</title>
+    <link rel="stylesheet" href="/css/evo.css">
+    <link rel="stylesheet" href="/css/evo-theme.css">
   </head>
   <body>
-    <h1>Sign In</h1>
-    <form id="signin">
-      <label>Email: <input type="email" name="email" required></label><br>
-      <label>Password: <input type="password" name="password" required></label><br>
-      <button type="submit">Sign In</button>
-    </form>
-    <div id="codeBox" style="display:none">
-      <p>A code was sent to your email. Enter it below to complete sign in.</p>
-      <form id="verify">
-        <label>Code: <input name="code" required></label>
-        <button type="submit">Verify</button>
-      </form>
+    <div class="center-wrap">
+      <div class="card-evo">
+        <h1>Sign in to Evo</h1>
+        <p class="lead small-muted">Enter your credentials to continue — we'll send a verification code to your email.</p>
+
+        <form id="signin">
+          <div class="mb-2"><input class="form-control evo" type="email" name="email" placeholder="Email" required /></div>
+          <div class="mb-3"><input class="form-control evo" type="password" name="password" placeholder="Password" required /></div>
+          <div class="d-flex gap-2 align-items-center">
+            <button class="btn-glass-border" type="submit"><span>Sign in</span></button>
+            <div class="small-muted">New? <a href="/signup.html">Create account</a></div>
+          </div>
+        </form>
+
+        <div id="codeBox" style="display:none; margin-top:12px;">
+          <p class="small-muted">Enter the verification code sent to your email.</p>
+          <form id="verify">
+            <div class="mb-2"><input class="form-control evo" name="code" placeholder="6-digit code" required /></div>
+            <div><button class="btn-glass-border" type="submit"><span>Verify</span></button></div>
+          </form>
+        </div>
+
+        <div id="msg" style="margin-top:12px; color:#ffd6ea"></div>
+      </div>
     </div>
-    <div id="msg"></div>
-    <script>
-      const form = document.getElementById('signin');
-      const codeBox = document.getElementById('codeBox');
-      const verifyForm = document.getElementById('verify');
-      const msg = document.getElementById('msg');
-      let pending = null;
 
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fd = new FormData(form);
-        const body = { email: fd.get('email'), password: fd.get('password') };
-        const res = await fetch('/api/signin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        const data = await res.json();
-        if (!res.ok) {
-          msg.textContent = data.error || JSON.stringify(data);
-          return;
-        }
-        pending = { email: body.email, type: 'signin' };
-        msg.textContent = 'Verification code sent — check your email.';
-        codeBox.style.display = 'block';
-        if (data.debugCode) msg.textContent += ' (dev code: ' + data.debugCode + ')';
-      });
-
-      verifyForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!pending) return msg.textContent = 'No pending signin.';
-        const fd = new FormData(verifyForm);
-        const code = fd.get('code');
-        const res = await fetch('/api/verify-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: pending.email, code, type: pending.type }) });
-        const data = await res.json();
-        if (!res.ok) return msg.textContent = data.error || JSON.stringify(data);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        msg.textContent = 'Signed in as ' + data.user.email;
-        codeBox.style.display = 'none';
-      });
-
-      if (localStorage.getItem('token')) {
-        const u = JSON.parse(localStorage.getItem('user') || 'null');
-        if (u) msg.textContent = `Already signed in as ${u.email}`;
-      }
-    </script>
+    <script src="/js/signin.js"></script>
   </body>
 </html>

@@ -1,0 +1,46 @@
+:root{
+  --editor-bg: #0b0b0b;
+  --panel-bg: rgba(255,255,255,0.03);
+}
+
+/* import global theme to align editor styling */
+@import url('/css/evo-theme.css');
+.editor-shell{display:flex; gap:16px; height:68vh;}
+.editor-files{width:300px; background:var(--panel-bg); padding:12px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.4);}
+.editor-files h3{margin-top:0}
+.file-list{margin-top:8px; max-height:52vh; overflow:auto}
+.file-list .file-row{display:flex; justify-content:space-between; gap:8px; margin-bottom:6px}
+.file-list .file-row button{padding:6px 8px; font-size:0.9rem}
+.file-actions{margin-top:12px}
+.editor-main{flex:1; display:flex; flex-direction:column; gap:8px}
+.editor-toolbar{display:flex; gap:8px; align-items:center}
+.editor-container{flex:1; background:var(--editor-bg); border-radius:8px; padding:8px;}
+.editor-textarea{width:100%; height:100%; border:none; background:transparent; color:#fff; font-family:monospace; font-size:13px; resize:none; outline:none}
+
+.ai-panel{position:fixed; left:12px; bottom:12px; width:360px; max-height:60vh; background:rgba(0,0,0,0.7); border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,0.6); overflow:hidden; display:none; flex-direction:column}
+.ai-panel .ai-header{display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.03)}
+.ai-panel .ai-body{padding:8px; overflow:auto; max-height:44vh}
+.ai-panel .ai-input{display:flex; gap:8px; padding:8px}
+.ai-message{margin-bottom:8px;padding:8px;border-radius:6px;background:rgba(255,255,255,0.03)}
+.ai-message.user{background:linear-gradient(90deg,#a1c4fd22,#ff61d822)}
+
+.settings-panel{position:fixed; right:12px; bottom:12px; width:320px; background:rgba(0,0,0,0.7); border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,0.6); padding:12px; display:none}
+.settings-panel .row{margin-bottom:8px}
+
+/* Tabs */
+.editor-tabs{display:flex; gap:6px; padding:6px; background:rgba(255,255,255,0.02); border-radius:6px}
+.editor-tab{padding:6px 10px; border-radius:6px; background:transparent; color:#ddd; cursor:pointer; display:flex; gap:8px; align-items:center}
+.editor-tab.active{background:linear-gradient(90deg,#ff61d8,#a1c4fd); color:#0b0b0b}
+.file-icon{width:18px; text-align:center; display:inline-block}
+.file-name{max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+
+/* make monaco container fill */
+#editorArea{width:100%; height:100%;}
+#editorContainer .monaco-editor{height:100% !important}
+
+/* small responsive */
+@media (max-width:720px){
+  .editor-shell{flex-direction:column}
+  .editor-files{width:100%;}
+}

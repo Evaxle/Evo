@@ -1,0 +1,48 @@
+<section>
+  <div style="padding:20px;">
+    <h2>My Projects</h2>
+    <p class="small-muted">Projects are saved locally and will sync to your account when signed in.</p>
+
+    <div id="projectsList" style="margin-top:12px;"></div>
+
+    <div style="margin-top:16px;">
+      <button class="btn-evo" id="btnNew">New Project</button>
+    </div>
+  </div>
+
+  <script>
+    const projectsKey = 'evo_projects_v1';
+    function renderProjects() {
+      const list = document.getElementById('projectsList');
+      const raw = localStorage.getItem(projectsKey) || '[]';
+      let arr = [];
+      try { arr = JSON.parse(raw); } catch (e) { arr = []; }
+      if (!arr.length) { list.innerHTML = '<div class="small-muted">No projects yet</div>'; return; }
+      let html = '<ul>' + arr.map(p=>`<li style="margin-bottom:8px"><strong>${p.name}</strong> — <button data-open="${p.id}" class="btn-evo" style="padding:6px 10px">Open</button> <button data-del="${p.id}" class="btn-evo" style="padding:6px 10px">Delete</button></li>`).join('') + '</ul>';
+      list.innerHTML = html;
+      list.querySelectorAll('button[data-open]').forEach(b => b.onclick = (e) => {
+        const id = b.getAttribute('data-open');
+        localStorage.setItem('evo_active_project', id);
+        loadSection('/editor');
+      });
+      list.querySelectorAll('button[data-del]').forEach(b => b.onclick = (e) => {
+        const id = b.getAttribute('data-del');
+        arr = arr.filter(x=>x.id!==id);
+        localStorage.setItem(projectsKey, JSON.stringify(arr));
+        renderProjects();
+      });
+    }
+    document.getElementById('btnNew').onclick = () => {
+      const name = prompt('Project name:');
+      if (!name) return;
+      const id = 'p_' + Math.random().toString(36).slice(2,9);
+      const raw = localStorage.getItem(projectsKey) || '[]';
+      let arr = [];
+      try { arr = JSON.parse(raw); } catch (e) { arr = []; }
+      arr.unshift({ id, name, created: Date.now(), files: [{path:'index.html', content:'<h1>Hello Evo</h1>'}] });
+      localStorage.setItem(projectsKey, JSON.stringify(arr));
+      renderProjects();
+    };
+    renderProjects();
+  </script>
+</section>

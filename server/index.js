@@ -304,5 +304,89 @@ app.get('/api/admin/export', adminMiddleware, async (req, res) => {
   }
 });
 
+// Projects API
+// List projects for current user
+app.get('/api/projects', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const rows = await db.getProjectsByUser(userId);
+    // parse data
+    const out = (rows || []).map(r => ({ id: r.id, name: r.name, data: (typeof r.data === 'string' ? JSON.parse(r.data) : r.data), created_at: r.created_at, updated_at: r.updated_at }));
+    res.json(out);
+  } catch (err) { console.error(err); res.status(500).json({ error: 'internal' }); }
+});
+
+// Create project
+app.post('/api/projects', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const project = req.body;
+    if (!project || !project.files) return res.status(400).json({ error: 'project with files required' });
+    const created = await db.createProject(userId, project);
+    res.json({ ok: true, project: created });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'internal' }); }
+});
+
+// Get single project
+app.get('/api/projects/:id', authMiddleware, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const p = await db.getProjectById(id);
+    if (!p) return res.status(404).json({ error: 'not found' });
+    if (p.user_id != req.user.id) return res.status(403).json({ error: 'forbidden' });
+    res.json(p);
+  } catch (err) { console.error(err); res.status(500).json({ error: 'internal' }); }
+});
+
+// Update project
+app.put('/api/projects/:id', authMiddleware, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const project = req.body;
+    const existing = await db.getProjectById(id);
+    if (!existing) return res.status(404).json({ error: 'not found' });
+    if (existing.user_id != req.user.id) return res.status(403).json({ error: 'forbidden' });
+    const updated = await db.updateProject(id, project);
+    res.json({ ok: true, project: updated });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'internal' }); }
+});
+
+// Delete project
+app.delete('/api/projects/:id', authMiddleware, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const existing = await db.getProjectById(id);
+    if (!existing) return res.status(404).json({ error: 'not found' });
+    if (existing.user_id != req.user.id) return res.status(403).json({ error: 'forbidden' });
+    await db.deleteProject(id);
+    res.json({ ok: true });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'internal' }); }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+
+// AI proxy endpoint — forwards chat messages to OpenAI-compatible API using server-side key
+app.post('/api/ai/chat', authMiddleware, async (req, res) => {
+  const OPENAI_KEY = process.env.OPENAI_API_KEY;
+  if (!OPENAI_KEY) return res.status(500).json({ error: 'AI API key not configured on server (set OPENAI_API_KEY)' });
+  const body = req.body || {};
+  const messages = body.messages || [];
+  const model = body.model || process.env.AI_MODEL || 'gpt-4o-mini';
+
+  try {
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_KEY}`
+      },
+      body: JSON.stringify({ model, messages, max_tokens: body.max_tokens || 1200 })
+    });
+    const data = await resp.json();
+    return res.json(data);
+  } catch (err) {
+    console.error('AI proxy error', err && err.message);
+    return res.status(500).json({ error: 'AI proxy error' });
+  }
+});

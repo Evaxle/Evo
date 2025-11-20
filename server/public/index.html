@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Evo — Code Editor</title>
+    <link rel="stylesheet" href="/css/evo.css">
+    <link rel="stylesheet" href="/css/evo-theme.css">
+  </head>
+  <body>
+    <div class="center-wrap" style="align-items:stretch;">
+      <div style="width:100%; max-width:1200px; margin:24px;">
+
+        <button class="btn-glass-border" style="position:fixed;left:18px;top:18px;z-index:60"><span>Evo Editor</span></button>
+
+        <nav class="glow-navbar" style="margin-bottom:18px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:12px">
+            <button class="nav-btn" data-link="/"> <span>Evo</span> </button>
+            <button class="nav-btn" data-link="/editor"> <span>Editor</span> </button>
+            <button class="nav-btn" data-link="/home"> <span>Home</span> </button>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center">
+            <button id="btnProfile" class="nav-btn" data-link="/profile"><span>Profile</span></button>
+            <a href="/signin.html" id="authLink" class="nav-btn"><span>Sign in</span></a>
+          </div>
+        </nav>
+
+        <nav class="glow-sidebar" id="glowSidebar">
+          <button class="nav-btnside"><span class="icon">H</span><span class="label">Home</span></button>
+          <button class="nav-btnside"><span class="icon">A</span><span class="label">About</span></button>
+          <button class="nav-btnside"><span class="icon">P</span><span class="label">Projects</span></button>
+          <button class="nav-btnside"><span class="icon">C</span><span class="label">Contact</span></button>
+        </nav>
+
+        <main id="app" style="min-height:560px;">
+          <!-- Section content will be loaded here -->
+        </main>
+
+      </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

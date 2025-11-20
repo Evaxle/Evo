@@ -130,6 +130,15 @@ async function init() {
     event TEXT,
     ts INTEGER
   )`);
+  // projects table: store project metadata and files as JSON
+  await db.run(`CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER,
+    name TEXT,
+    data TEXT,
+    created_at INTEGER,
+    updated_at INTEGER
+  )`);
 }
 
 async function createUser({ email, password, name }) {
@@ -252,8 +261,49 @@ async function setPassword(id, newPassword) {
   await db.run('UPDATE users SET password = ? WHERE id = ?', [hashed, id]);
 }
 
+const crypto = require('crypto');
+
+async function createProject(user_id, project) {
+  const id = project.id || crypto.randomBytes(8).toString('hex');
+  const now = Math.floor(Date.now() / 1000);
+  const text = JSON.stringify(project);
+  await db.run('INSERT INTO projects (id, user_id, name, data, created_at, updated_at) VALUES (?,?,?,?,?,?)', [id, user_id, project.name || null, text, now, now]);
+  return { id, user_id, name: project.name, data: project };
+}
+
+async function getProjectsByUser(user_id) {
+  return await db.all('SELECT * FROM projects WHERE user_id = ?', [user_id]);
+}
+
+async function getProjectById(id) {
+  const row = await db.get('SELECT * FROM projects WHERE id = ?', [id]);
+  if (!row) return null;
+  try { row.data = JSON.parse(row.data); } catch (e) { row.data = null; }
+  return row;
+}
+
+async function updateProject(id, project) {
+  const now = Math.floor(Date.now() / 1000);
+  const text = JSON.stringify(project);
+  await db.run('UPDATE projects SET name = ?, data = ?, updated_at = ? WHERE id = ?', [project.name || null, text, now, id]);
+  return await getProjectById(id);
+}
+
+async function deleteProject(id) {
+  await db.run('DELETE FROM projects WHERE id = ?', [id]);
+}
+
+module.exports = {
+  init, createUser, createUserWithHashed, findUserByEmail, verifyPassword, findUserById, findAllUsers,
+  updateUserData, updateUser, setPassword, createAuthCode, findValidAuthCode, markAuthCodeUsed,
+  deleteUser, setRole, recordLoginEvent, getLoginEvents, getLastLogin,
+  // project functions
+  createProject, getProjectsByUser, getProjectById, updateProject, deleteProject
+};
+
 module.exports = {
   init, createUser, createUserWithHashed, findUserByEmail, verifyPassword, findUserById, findAllUsers,
   updateUserData, updateUser, setPassword, createAuthCode, findValidAuthCode, markAuthCodeUsed,
   deleteUser, setRole, recordLoginEvent, getLoginEvents, getLastLogin
 };
+
