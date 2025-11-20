@@ -11,15 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const body = { email: fd.get('email'), name: fd.get('name'), password: fd.get('password') };
     const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      msg.textContent = data.error || JSON.stringify(data);
-      return;
-    }
-    pending = { email: body.email, type: 'signup' };
-    msg.textContent = 'Verification code sent — check your email.';
-    codeBox.style.display = 'block';
-    if (data.debugCode) msg.textContent += ' (dev code: ' + data.debugCode + ')';
-  });
+   });
 
   verifyForm.addEventListener('submit', async (e) => {
     e.preventDefault();

@@ -15,10 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
       msg.textContent = data.error || JSON.stringify(data);
       return;
     }
-    pending = { email: body.email, type: 'signin' };
-    msg.textContent = 'Verification code sent — check your email.';
-    codeBox.style.display = 'block';
-    if (data.debugCode) msg.textContent += ' (dev code: ' + data.debugCode + ')';
   });
 
   verifyForm.addEventListener('submit', async (e) => {
