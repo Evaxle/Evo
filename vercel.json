@@ -3,7 +3,7 @@
   "buildCommand": "echo 'no build needed'",
   "outputDirectory": ".",
   "routes": [
-    { "src": "/(.*)", "dest": "/index.js" }
+    { "src": "/(.*)", "dest": "public/pages/js/main.js" }
   ],
   "env": {
     "NODE_ENV": "production"
