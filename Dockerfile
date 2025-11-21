@@ -1,8 +1,23 @@
-FROM node:18-bullseye
+# Use a Node base image
+FROM node:20‑alpine
+
+# Set working directory
 WORKDIR /app
-COPY package.json package-lock.json* ./
+
+# Copy package.json and lockfile
+COPY package*.json ./
+
+# Install dependencies
 RUN npm install --production
+
+# Copy rest of the source
 COPY . .
-ENV PORT=3000
+
+# Build the project
+RUN npm run build
+
+# Expose the port (if you have a server)
 EXPOSE 3000
-CMD ["npm","start"]
+
+# Start command
+CMD ["npm", "start"]
