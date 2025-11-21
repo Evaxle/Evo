@@ -1,6 +1,0 @@
-nohup: ignoring input
-Email transporter not configured — codes will be logged to console
-Server listening on 3000
-DB initialized
-(dev) sending email to readonly_test@example.com: Your signup code is: 583824
-It expires in 10 minutes.

@@ -1,0 +1,90 @@
+/* layout */
+.home-wrapper {
+  width:80%;
+  margin-left:140px;
+  display:flex;
+  flex-direction:column;
+  gap:3rem;
+  animation:fadeIn .8s ease;
+}
+
+@keyframes fadeIn {
+  0%{opacity:0;transform:translateY(20px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+
+.home-header {
+  text-align:center;
+}
+
+.home-header h1 {
+  font-size:3rem;
+  margin:0;
+}
+
+.home-header p {
+  opacity:.7;
+  font-size:1.1rem;
+}
+
+/* grid */
+.home-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:2rem;
+}
+
+/* card */
+.glass-card {
+  background:rgba(255,255,255,0.06);
+  backdrop-filter:blur(12px);
+  border-radius:20px;
+  padding:1.5rem;
+  border:2px solid rgba(255,255,255,0.08);
+  position:relative;
+  overflow:hidden;
+  animation:cardFade .8s ease;
+}
+
+@keyframes cardFade {
+  0%{opacity:0;transform:translateY(15px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+
+.glass-card h2 {
+  margin-top:0;
+  margin-bottom:1rem;
+  font-size:1.4rem;
+}
+
+.list-item {
+  padding:.7rem 1rem;
+  background:rgba(255,255,255,0.07);
+  border-radius:10px;
+  margin-bottom:.6rem;
+  transition:.3s;
+}
+
+.list-item:hover {
+  transform:scale(1.03);
+  background:rgba(255,255,255,0.12);
+}
+
+/* create new project */
+.create-card input {
+  width:100%;
+  padding:.7rem 1rem;
+  border-radius:12px;
+  border:none;
+  outline:none;
+  background:rgba(255,255,255,0.12);
+  color:#fff;
+  font-size:1rem;
+  margin-bottom:1rem;
+}
+
+.create-btn {
+  width:100%;
+  justify-content:center;
+  font-size:1rem;
+}
