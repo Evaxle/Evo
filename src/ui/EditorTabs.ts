@@ -2,6 +2,7 @@ import { icons } from '../core/icons';
 import { bus, EV } from '../core/EventEmitter';
 import { commands } from '../core/commands';
 import { showContextMenu } from './ContextMenu';
+import { fileIconForName } from '../core/fileIcons';
 import type { EditorManager } from '../editor/EditorManager';
 
 export class EditorTabs {
@@ -37,8 +38,7 @@ export class EditorTabs {
 
       const icon = document.createElement('span');
       icon.className = 'tab-icon';
-      icon.innerHTML = icons.file;
-      icon.style.color = tab.nodeId === active ? '#4fc1ff' : '#8a8a8a';
+      icon.innerHTML = fileIconForName(tab.name).svg;
       el.appendChild(icon);
 
       const label = document.createElement('span');

@@ -1,4 +1,5 @@
 import { icons } from '../core/icons';
+import { fileIconForName } from '../core/fileIcons';
 import type { FileSystem } from '../fs/FileSystem';
 import type { FSNode } from '../core/types';
 
@@ -109,7 +110,7 @@ export class SearchView {
       const node = this.fs.getNode(nodeId)!;
       const fileHeader = document.createElement('div');
       fileHeader.className = 'search-file';
-      fileHeader.innerHTML = `<span class="file-icon">${icons.file}</span><span class="file-name">${node.name}</span>`;
+      fileHeader.innerHTML = `<span class="file-icon">${fileIconForName(node.name).svg}</span><span class="file-name">${node.name}</span>`;
       fileHeader.addEventListener('click', () => this.onOpenFile(nodeId));
       this.resultsEl.appendChild(fileHeader);
 

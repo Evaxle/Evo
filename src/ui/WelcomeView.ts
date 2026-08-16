@@ -52,7 +52,7 @@ export class WelcomeView {
     this.actionButton(actions, icons.folder, 'Open Folder', 'Browse for a local folder to use as your workspace', () => void commands.execute('file.openFolder'));
     this.actionButton(actions, icons.open, 'Open File', 'Open one or more local files', () => void commands.execute('file.openFile'));
     this.actionButton(actions, icons.newfile, 'New File', 'Create a new file in the current workspace', () => void commands.execute('file.new'));
-    this.actionButton(actions, icons.cloud, 'GitHub Codespaces', 'Connect your GitHub account (coming soon)', () => void commands.execute('workbench.action.account'));
+    this.actionButton(actions, icons['source-control'], 'Clone Repository', 'Load a GitHub repository to edit and commit', () => void commands.execute('github.loadRepos'));
     this.el.appendChild(actions);
 
     const recents = document.createElement('div');

@@ -48,7 +48,7 @@ export function showSettings(settings: SettingsStore): void {
   // Theme
   const theme = document.createElement('select');
   theme.className = 'evo-settings-select';
-  theme.innerHTML = `<option value="dark">Evo Dark</option><option value="light">Evo Light</option>`;
+  theme.innerHTML = `<option value="dark">Dark+ (default)</option><option value="light">Light+</option>`;
   theme.value = s.theme;
   field('Theme', 'Controls the color theme of the editor.', theme);
 

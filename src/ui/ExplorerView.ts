@@ -4,6 +4,7 @@ import { commands } from '../core/commands';
 import { showContextMenu } from './ContextMenu';
 import { showModal } from './Modal';
 import { toast } from './Toast';
+import { fileIconForName } from '../core/fileIcons';
 import type { FileSystem } from '../fs/FileSystem';
 import type { FSNode } from '../core/types';
 
@@ -90,7 +91,7 @@ export class ExplorerView {
       row.appendChild(chevron);
 
       const icon = document.createElement('span');
-      icon.className = 'tree-icon';
+      icon.className = `tree-icon ${isOpen ? 'folder-open' : 'folder-closed'}`;
       icon.innerHTML = isOpen ? icons['folder-open'] : icons.folder;
       row.appendChild(icon);
 
@@ -119,13 +120,12 @@ export class ExplorerView {
       if (this.editingId === node.id) row.classList.add('editing');
 
       const spacer = document.createElement('span');
-      spacer.className = 'tree-chevron';
+      spacer.className = 'tree-chevron empty';
       row.appendChild(spacer);
 
       const icon = document.createElement('span');
       icon.className = 'tree-icon file-icon';
-      icon.textContent = this.fileGlyph(node.name);
-      icon.style.color = this.fileColor(node.name);
+      icon.innerHTML = fileIconForName(node.name).svg;
       row.appendChild(icon);
 
       const name = document.createElement('span');
@@ -137,33 +137,6 @@ export class ExplorerView {
       this.bindRow(row, node);
       parent.appendChild(row);
     }
-  }
-
-  private fileGlyph(name: string): string {
-    const lower = name.toLowerCase();
-    if (lower === 'package.json' || lower.endsWith('.json')) return '{}';
-    const ext = lower.split('.').pop() ?? '';
-    const glyphs: Record<string, string> = {
-      ts: 'TS', tsx: 'TS', js: 'JS', jsx: 'JS', mjs: 'JS',
-      html: '<>', css: '#', scss: '#', md: 'M↓', py: 'PY',
-      go: 'GO', rs: 'RS', c: 'C', h: 'H', cpp: 'C++', java: 'JA',
-      yml: 'Y', yaml: 'Y', sh: '>_', sql: 'SQL', vue: 'V', svelte: 'S',
-    };
-    return glyphs[ext] ?? '·';
-  }
-
-  private fileColor(name: string): string {
-    const lower = name.toLowerCase();
-    const ext = lower.split('.').pop() ?? '';
-    const colors: Record<string, string> = {
-      ts: '#4fc1ff', tsx: '#4fc1ff', js: '#e8d44d', jsx: '#e8d44d',
-      json: '#c2c2c2', html: '#e44d26', css: '#42a5f5', scss: '#c76395',
-      md: '#519aba', py: '#3572a5', go: '#00add8', rs: '#dea584',
-      c: '#555', h: '#555', cpp: '#f34b7d', java: '#b07219',
-      yml: '#8ab4f8', sh: '#89e051', sql: '#dad8d8', vue: '#41b883',
-      svelte: '#ff3e00', gitignore: '#9e9e9e', lock: '#e6c07b',
-    };
-    return colors[ext] ?? '#8a8a8a';
   }
 
   private bindRow(row: HTMLElement, node: FSNode): void {

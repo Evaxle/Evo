@@ -16,12 +16,13 @@ export const icons: Record<string, string> = {
   search:
     svg('<circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'),
   'source-control':
-    svg('<circle cx="5" cy="3" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="5" cy="13" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 5v6M7 13h4a2 2 0 0 0 2-2v-1" stroke="currentColor" stroke-width="1.5"/>'),
-  run: svg('<path d="M3.5 2l9 6-9 6V2z" fill="currentColor"/>'),
+    svg('<circle cx="4.5" cy="3" r="1.9" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="4.5" cy="13" r="1.9" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="11.5" cy="8" r="1.9" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M4.5 4.9v6.2M7.2 13h2.5a1.8 1.8 0 0 0 1.8-1.8v-2.4" stroke="currentColor" stroke-width="1.3"/>'),
+  run:
+    svg('<path d="M4.2 2.6l9 5.4-9 5.4V2.6z" fill="currentColor"/>'),
   extensions:
-    svg('<rect x="3" y="3" width="4" height="4" rx="1" fill="currentColor"/><rect x="9" y="3" width="4" height="4" rx="1" fill="currentColor"/><rect x="3" y="9" width="4" height="4" rx="1" fill="currentColor"/><rect x="9" y="9" width="4" height="4" rx="1" fill="currentColor"/>'),
+    svg('<path d="M13.5 8.8l-1.7-1V4.6l-3-1.8-3 1.8v3.2l-1.7 1v3.7l4.7 2.8 4.7-2.8V8.8z" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M8 6.5l3.8 2.3M8 6.5L4.2 8.8M8 6.5v5.4M11.8 8.8L8 11.9M4.2 8.8L8 11.9" stroke="currentColor" stroke-width="1"/>'),
   account:
-    svg('<circle cx="8" cy="5" r="3" fill="currentColor"/><path d="M2 15a6 6 0 0 1 12 0" fill="currentColor"/>'),
+    svg('<circle cx="8" cy="4.5" r="3.2" fill="currentColor"/><path d="M2 15a6 6 0 0 1 12 0" fill="currentColor"/>'),
   close:
     svg('<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'),
   newfile: svg('<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'),
@@ -50,9 +51,11 @@ export const icons: Record<string, string> = {
   folderOpened:
     svg('<path d="M1.5 3a1 1 0 0 1 1-1h3.5l1.5 2h6a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V3z" fill="currentColor"/>'),
   gear: svg('<circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M13 3l-1.4 1.4M4.4 11.6L3 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>'),
-  settings: svg('<circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M13 3l-1.4 1.4M4.4 11.6L3 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>'),
-  menu: svg('<path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'),
-  home: svg('<path d="M2 7.5L8 2l6 5.5V14H2V7.5z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M5.5 14V9h5v5" stroke="currentColor" stroke-width="1.3" fill="none"/>'),
+  settings:
+    svg('<path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" fill="currentColor"/><path d="M8 1.5l1.2.2.4 1.4a5 5 0 0 1 1.3.8l1.4-.2 1.2 1.2-.2 1.4a5 5 0 0 1 .8 1.3l1.4.4v1.6l-1.4.4a5 5 0 0 1-.8 1.3l.2 1.4-1.2 1.2-1.4-.2a5 5 0 0 1-1.3.8l-.4 1.4H6.4l-.4-1.4a5 5 0 0 1-1.3-.8l-1.4.2-1.2-1.2.2-1.4a5 5 0 0 1-.8-1.3L.1 9.4V7.8l1.4-.4a5 5 0 0 1 .8-1.3L2.1 4.7l1.2-1.2 1.4.2a5 5 0 0 1 1.3-.8l.4-1.4h1.6z" fill="currentColor" opacity="0.95"/>'),
+  menu: svg('<path d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z" fill="currentColor"/>'),
+  home:
+    svg('<path d="M8 1.5L1.5 7H3v7h3.5v-4h3V14H13V7h1.5L8 1.5z" fill="currentColor"/>'),
   branch:
     svg('<circle cx="5" cy="3" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="5" cy="13" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 5v6M7 13h4a2 2 0 0 0 2-2v-1" stroke="currentColor" stroke-width="1.5"/>'),
   sync:

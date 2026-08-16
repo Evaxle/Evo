@@ -16,6 +16,11 @@ export class TitleBar {
     this.el.className = 'evo-titlebar';
 
     this.el.innerHTML = `
+      <div class="tb-dots">
+        <span class="tb-dot close"></span>
+        <span class="tb-dot minimize"></span>
+        <span class="tb-dot maximize"></span>
+      </div>
       <div class="tb-left">
         <button class="tb-btn tb-menu" title="Menu"></button>
         <span class="tb-brand"><span class="tb-logo">E</span><span class="tb-name">Evo</span></span>
