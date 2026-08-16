@@ -1,23 +1,13 @@
-# Use a Node base image
-FROM node:20‑alpine
-
-# Set working directory
+# Build stage
+FROM node:20-alpine AS build
 WORKDIR /app
-
-# Copy package.json and lockfile
 COPY package*.json ./
-
-# Install dependencies
-RUN npm install --production
-
-# Copy rest of the source
+RUN npm install
 COPY . .
-
-# Build the project
 RUN npm run build
 
-# Expose the port (if you have a server)
-EXPOSE 3000
-
-# Start command
-CMD ["npm", "start"]
+# Serve stage
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
