@@ -1,116 +1,11 @@
 import { genId } from '../fs/FileSystem';
 import { languageFromPath } from '../core/language';
 import type { FSNode } from '../core/types';
-import { getGitHubLink, setGitHubLink } from './cloud';
+import { getGitHubLink } from './cloud';
 
-const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID?.trim() || undefined;
 const API = 'https://api.github.com';
 
-export function githubConfigured(): boolean {
-  return !!GITHUB_CLIENT_ID;
-}
-
-// ---- Device flow linking ---------------------------------------------------
-
-export interface DeviceFlowStep {
-  ok: true;
-  deviceCode: string;
-  userCode: string;
-  verificationUri: string;
-  interval: number;
-}
-
-export interface DeviceFlowStepError {
-  ok: false;
-  error: string;
-}
-
-export async function startDeviceFlow(): Promise<DeviceFlowStep | DeviceFlowStepError> {
-  if (!GITHUB_CLIENT_ID) {
-    return { ok: false, error: 'GitHub is not configured yet (missing VITE_GITHUB_CLIENT_ID).' };
-  }
-  const res = await fetch('https://github.com/login/device/code', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ client_id: GITHUB_CLIENT_ID, scope: 'repo' }),
-  });
-  const data = await res.json();
-  if (data.error || !data.device_code) {
-    return { ok: false, error: data.error_description ?? data.error ?? 'Failed to start GitHub link.' };
-  }
-  return {
-    ok: true,
-    deviceCode: data.device_code,
-    userCode: data.user_code,
-    verificationUri: data.verification_uri,
-    interval: data.interval || 5,
-  };
-}
-
-export async function pollForToken(
-  deviceCode: string,
-  interval: number,
-  onPoll?: (state: 'waiting' | 'authorized' | 'denied' | 'expired') => void,
-): Promise<{ ok: boolean; token?: string; error?: string }> {
-  const deadline = Date.now() + 15 * 60 * 1000; // 15 min
-  while (Date.now() < deadline) {
-    await sleep(Math.max(interval, 3) * 1000);
-    const res = await fetch('https://github.com/login/oauth/access_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({
-        client_id: GITHUB_CLIENT_ID,
-        device_code: deviceCode,
-        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-      }),
-    });
-    const data = await res.json();
-    if (data.access_token) {
-      onPoll?.('authorized');
-      return { ok: true, token: data.access_token };
-    }
-    if (data.error === 'authorization_pending') {
-      onPoll?.('waiting');
-      continue;
-    }
-    if (data.error === 'slow_down') {
-      await sleep(5 * 1000);
-      continue;
-    }
-    if (data.error === 'access_denied') {
-      onPoll?.('denied');
-      return { ok: false, error: 'Access denied.' };
-    }
-    if (data.error === 'expired_token') {
-      onPoll?.('expired');
-      return { ok: false, error: 'The link request expired. Please try again.' };
-    }
-  }
-  return { ok: false, error: 'Timed out waiting for authorization.' };
-}
-
-/** Links the GitHub account using device flow, storing the token. */
-export async function linkGitHubAccount(): Promise<{ ok: boolean; error?: string; username?: string }> {
-  const step = await startDeviceFlow();
-  if (!step.ok) return { ok: false, error: step.error };
-
-  const poll = await pollForToken(step.deviceCode, step.interval);
-  if (!poll.ok || !poll.token) return { ok: false, error: poll.error ?? 'Linking failed.' };
-
-  const user = await githubWhoami(poll.token);
-  const username = user?.login ?? '';
-  await setGitHubLink({ token: poll.token, username });
-  return { ok: true, username };
-}
-
 // ---- API helpers -----------------------------------------------------------
-
-export async function githubWhoami(token?: string): Promise<{ login: string } | null> {
-  const link = token ? { token } : await getGitHubLink();
-  if (!link?.token) return null;
-  const res = await gh(link.token, '/user');
-  return res.ok ? (res.body as { login: string }) : null;
-}
 
 export interface GitHubRepo {
   name: string;
@@ -362,5 +257,3 @@ function decodeBase64(b64: string): string {
     return '';
   }
 }
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

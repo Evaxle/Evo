@@ -1,4 +1,6 @@
 import { login, register } from '../lib/auth';
+import { supabase } from '../lib/supabase';
+import { icons } from '../core/icons';
 
 export interface AuthScreenOptions {
   onAuthenticated: (username: string) => void;
@@ -6,13 +8,15 @@ export interface AuthScreenOptions {
 }
 
 /**
- * Full-screen sign in / create account card. Username + password only.
+ * Full-screen sign in / create account card. Username + password, or
+ * sign in/sign up with a GitHub account (Supabase GitHub OAuth).
  */
 export class AuthScreen {
   el: HTMLElement;
   private mode: 'login' | 'register' = 'login';
   private statusEl!: HTMLElement;
   private submitBtn!: HTMLButtonElement;
+  private oauthBtn!: HTMLButtonElement;
   private busy = false;
 
   constructor(private root: HTMLElement, private opts: AuthScreenOptions) {
@@ -47,6 +51,12 @@ export class AuthScreen {
           <button class="auth-submit" type="submit">Sign In</button>
         </form>
 
+        <div class="auth-or"><span>or</span></div>
+        <button class="auth-oauth" type="button">
+          ${icons.github}
+          <span>Continue with GitHub</span>
+        </button>
+
         <button class="auth-guest">Use Evo without an account</button>
         <p class="auth-foot">Your projects, files and settings are synced and autosaved to your account.</p>
       </div>
@@ -54,6 +64,7 @@ export class AuthScreen {
 
     this.statusEl = this.el.querySelector<HTMLElement>('.auth-status')!;
     this.submitBtn = this.el.querySelector<HTMLButtonElement>('.auth-submit')!;
+    this.oauthBtn = this.el.querySelector<HTMLButtonElement>('.auth-oauth')!;
 
     this.el.querySelectorAll<HTMLElement>('.auth-tab').forEach((tab) => {
       tab.addEventListener('click', () => this.setMode(tab.dataset.mode === 'register' ? 'register' : 'login'));
@@ -67,6 +78,8 @@ export class AuthScreen {
     this.el.querySelector<HTMLButtonElement>('.auth-guest')!.addEventListener('click', () => {
       this.opts.onGuest();
     });
+
+    this.oauthBtn.addEventListener('click', () => void this.signInWithGitHub());
 
     this.setMode('login');
   }
@@ -86,6 +99,38 @@ export class AuthScreen {
   private setStatus(msg: string, kind: 'error' | 'info' = 'error'): void {
     this.statusEl.textContent = msg;
     this.statusEl.classList.toggle('error', kind === 'error');
+  }
+
+  private async signInWithGitHub(): Promise<void> {
+    if (this.busy) return;
+    if (!supabase) {
+      this.setStatus('Cloud accounts are not configured yet.');
+      return;
+    }
+    this.busy = true;
+    this.oauthBtn.disabled = true;
+    const label = this.oauthBtn.querySelector('span');
+    if (label) label.textContent = 'Redirecting to GitHub…';
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: window.location.origin,
+          scopes: 'repo',
+        },
+      });
+      if (error) {
+        this.busy = false;
+        this.oauthBtn.disabled = false;
+        if (label) label.textContent = 'Continue with GitHub';
+        this.setStatus(error.message);
+      }
+    } catch {
+      this.busy = false;
+      this.oauthBtn.disabled = false;
+      if (label) label.textContent = 'Continue with GitHub';
+      this.setStatus('Could not reach GitHub. Check your connection and try again.');
+    }
   }
 
   private async submit(): Promise<void> {

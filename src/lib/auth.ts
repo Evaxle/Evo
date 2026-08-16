@@ -131,6 +131,25 @@ export async function getSessionUser(): Promise<User | null> {
   return data.session?.user ?? null;
 }
 
+/** Returns the GitHub access token when the session was created via GitHub OAuth. */
+export async function getGitHubProviderToken(): Promise<string | null> {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session?.provider_token ?? null;
+}
+
+/** Derives the GitHub username from a user created via GitHub OAuth. */
+export function githubUsername(u: User): string | null {
+  const meta = u.user_metadata as Record<string, unknown> | undefined;
+  if (typeof meta?.user_name === 'string' && meta.user_name) return meta.user_name;
+  if (typeof meta?.login === 'string' && meta.login) return meta.login;
+  const gh = u.identities?.find((i) => i.provider === 'github');
+  const data = (gh?.identity_data ?? {}) as Record<string, unknown>;
+  if (typeof data.user_name === 'string' && data.user_name) return data.user_name;
+  if (typeof data.login === 'string' && data.login) return data.login;
+  return null;
+}
+
 export function onAuthStateChange(cb: (user: User | null) => void): () => void {
   if (!supabase) {
     cb(null);

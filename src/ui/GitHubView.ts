@@ -1,6 +1,6 @@
 import { icons } from '../core/icons';
-import { getGitHubLink, setGitHubLink } from '../lib/cloud';
-import { commitChanges, linkGitHubAccount } from '../lib/github';
+import { getGitHubLink } from '../lib/cloud';
+import { commitChanges } from '../lib/github';
 import { toast } from './Toast';
 import type { FileSystem } from '../fs/FileSystem';
 import type { FSNode } from '../core/types';
@@ -63,9 +63,8 @@ export class GitHubView {
       card.innerHTML = `
         <div class="github-card-icon">${icons['source-control']}</div>
         <p>Sign in with GitHub to load repositories, edit files and commit your changes.</p>
-        <button class="github-btn">Link GitHub Account</button>
+        <p class="github-empty-sub">Go to the Home screen and sign in with GitHub.</p>
       `;
-      card.querySelector<HTMLButtonElement>('.github-btn')!.addEventListener('click', () => void this.link());
       this.bodyEl.appendChild(card);
       return;
     }
@@ -162,16 +161,6 @@ export class GitHubView {
     }
 
     this.bodyEl.appendChild(changes);
-
-    const unlink = document.createElement('button');
-    unlink.className = 'github-unlink';
-    unlink.textContent = `Unlink @${link.username || 'unknown'}`;
-    unlink.addEventListener('click', async () => {
-      await setGitHubLink(null);
-      toast('GitHub unlinked', 'info');
-      void this.render();
-    });
-    this.bodyEl.appendChild(unlink);
   }
 
   private computeDiff(): DiffEntry[] {
@@ -212,12 +201,5 @@ export class GitHubView {
     };
     walk(this.fs.root, '');
     this.session.snapshot = snap;
-  }
-
-  private async link(): Promise<void> {
-    const result = await linkGitHubAccount();
-    if (result.ok) toast(`Linked GitHub as @${result.username}`, 'success');
-    else toast(result.error ?? 'Failed to link GitHub', 'error', 6000);
-    void this.render();
   }
 }

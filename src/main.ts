@@ -30,7 +30,13 @@ import {
   readFileAsText,
 } from './fs/LocalFiles';
 import { cloudEnabled } from './lib/supabase';
-import { getSessionUser, logout, onAuthStateChange } from './lib/auth';
+import {
+  getSessionUser,
+  githubUsername,
+  getGitHubProviderToken,
+  logout,
+  onAuthStateChange,
+} from './lib/auth';
 import {
   createProject,
   getProject,
@@ -39,6 +45,7 @@ import {
   saveCloudEditorState,
   saveCloudSettings,
   saveProject,
+  setGitHubLink,
 } from './lib/cloud';
 import { listRepos, loadRepoTree } from './lib/github';
 import type { User } from '@supabase/supabase-js';
@@ -252,10 +259,20 @@ async function boot(): Promise<void> {
     }
   }
 
+  function displayName(): string {
+    if (!user) return '';
+    return (
+      (user ? githubUsername(user) : null) ??
+      (user?.user_metadata?.username as string | undefined) ??
+      user?.email ??
+      ''
+    );
+  }
+
   function refreshHome(): void {
     if (!homeScreen) {
       homeScreen = new HomeScreen(homeRoot, {
-        username: user?.user_metadata?.username as string | undefined ?? user?.email ?? null,
+        username: displayName() || null,
         signedIn,
         onOpenCloudProject: (id) => void openCloudProject(id),
         onCreateProject: (name) => void createProjectFlow(name),
@@ -266,7 +283,7 @@ async function boot(): Promise<void> {
         onLoadRepo: (owner, repo, branch) => void loadRepoIntoEvo(owner, repo, branch),
       });
     } else {
-      homeScreen.opts.username = user?.user_metadata?.username as string | undefined ?? user?.email ?? null;
+      homeScreen.opts.username = displayName() || null;
       homeScreen.opts.signedIn = signedIn;
     }
     void workspaces.list().then((list) => homeScreen!.setLocalWorkspaces(list));
@@ -289,10 +306,22 @@ async function boot(): Promise<void> {
   async function handleUser(u: User | null): Promise<void> {
     user = u;
     signedIn = !!u;
-    const username = (u?.user_metadata?.username as string | undefined) ?? u?.email ?? '';
+    const username = displayName();
     activityBar.setSignedIn(signedIn, username);
 
     if (signedIn) {
+      // GitHub OAuth sessions carry a GitHub access token; persist it so the
+      // repo features work. Regular username/password accounts get none.
+      const ghToken = await getGitHubProviderToken();
+      if (ghToken && u) {
+        await setGitHubLink({
+          token: ghToken,
+          username: githubUsername(u) ?? (u?.user_metadata?.username as string | undefined) ?? '',
+        });
+      } else {
+        await setGitHubLink(null);
+      }
+
       const cloudSettings = await loadCloudSettings();
       if (cloudSettings) settings.update(cloudSettings);
       if (guestMode || currentCloudProjectId) {

@@ -1675,91 +1675,6 @@ kbd {
   max-width: 220px;
 }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 700px) {
-  .evo-sidebar {
-    width: 220px;
-    max-width: 220px;
-    min-width: 160px;
-  }
-  .evo-welcome {
-    padding-top: 24px;
-  }
-  .evo-preview-overlay {
-    padding: 12px;
-  }
-  .evo-tab {
-    min-width: 90px;
-  }
-  .evo-quick-overlay {
-    padding-top: 40px;
-  }
-  .evo-auth {
-    padding: 20px;
-  }
-  .evo-home {
-    padding: 24px 20px 48px;
-  }
-}
-
-@media (max-width: 480px) {
-  .evo-activitybar {
-    width: 40px;
-  }
-  .ab-btn {
-    width: 40px;
-    height: 38px;
-  }
-  .ab-btn svg {
-    width: 19px;
-    height: 19px;
-  }
-  .evo-sidebar {
-    width: 60vw;
-    max-width: 220px;
-    min-width: 160px;
-  }
-  .evo-titlebar {
-    height: 32px;
-  }
-  .tb-dots {
-    display: none;
-  }
-  .tb-center {
-    position: static;
-    transform: none;
-    flex: 1;
-    justify-content: flex-start;
-    padding-left: 8px;
-  }
-  .evo-statusbar {
-    font-size: 11px;
-  }
-  .sb-item {
-    padding: 0 5px;
-  }
-  .auth-card {
-    max-width: 100%;
-    padding: 28px 22px 22px;
-  }
-  .evo-home {
-    padding: 20px 16px 40px;
-  }
-  .home-header-actions {
-    gap: 4px;
-  }
-  .home-action {
-    padding: 6px 10px;
-  }
-  .home-action span {
-    display: none;
-  }
-  .home-action svg {
-    width: 17px;
-    height: 17px;
-  }
-}
-
 /* ---------- Top-level screen roots ---------- */
 .evo-auth-root,
 .evo-home-root {
@@ -1786,6 +1701,7 @@ kbd {
 /* ---------- Auth screen ---------- */
 .evo-auth {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1921,6 +1837,54 @@ kbd {
   cursor: default;
 }
 
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 16px 0 12px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.auth-or::before,
+.auth-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-oauth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--border-light);
+  border-radius: 2px;
+  background: var(--bg-input);
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.auth-oauth svg {
+  width: 17px;
+  height: 17px;
+}
+.auth-oauth:hover {
+  background: #4a4a4a;
+  border-color: var(--focus-border);
+}
+.auth-oauth:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .auth-guest {
   margin-top: 18px;
   background: transparent;
@@ -1944,6 +1908,7 @@ kbd {
 /* ---------- Home screen ---------- */
 .evo-home {
   flex: 1;
+  min-width: 0;
   padding: 32px 40px 60px;
   overflow-y: auto;
   background: #1e1e1e;
@@ -2066,6 +2031,12 @@ kbd {
   max-width: 1000px;
   margin: 0 auto;
   align-items: start;
+}
+.home-grid.projects-only {
+  grid-template-columns: 1fr;
+}
+.home-github-col.hidden {
+  display: none;
 }
 @media (max-width: 900px) {
   .home-grid {
@@ -2207,16 +2178,6 @@ kbd {
   flex-direction: column;
   gap: 10px;
 }
-.home-github-note {
-  padding: 14px;
-  background: #252526;
-  border: 1px solid var(--border-light);
-  border-radius: 10px;
-  color: #8a8a8a;
-  font-size: 12px;
-  line-height: 1.5;
-}
-.home-github-card,
 .home-github-linked {
   display: flex;
   align-items: center;
@@ -2252,28 +2213,6 @@ kbd {
 .hg-desc {
   font-size: 12px;
   color: #8a8a8a;
-}
-.hg-btn {
-  padding: 5px 12px;
-  border: none;
-  border-radius: 2px;
-  background: #0e639c;
-  color: #fff;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.hg-btn:hover {
-  background: #1177bb;
-}
-.hg-btn-ghost {
-  background: transparent;
-  border: 1px solid var(--border-light);
-  color: var(--fg);
-}
-.hg-btn-ghost:hover {
-  background: var(--bg-hover);
-  color: #fff;
 }
 
 .home-repos {
@@ -2522,4 +2461,89 @@ kbd {
   height: 6px;
   border-radius: 50%;
   background: var(--success);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 700px) {
+  .evo-sidebar {
+    width: 220px;
+    max-width: 220px;
+    min-width: 160px;
+  }
+  .evo-welcome {
+    padding-top: 24px;
+  }
+  .evo-preview-overlay {
+    padding: 12px;
+  }
+  .evo-tab {
+    min-width: 90px;
+  }
+  .evo-quick-overlay {
+    padding-top: 40px;
+  }
+  .evo-auth {
+    padding: 20px;
+  }
+  .evo-home {
+    padding: 24px 20px 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .evo-activitybar {
+    width: 40px;
+  }
+  .ab-btn {
+    width: 40px;
+    height: 38px;
+  }
+  .ab-btn svg {
+    width: 19px;
+    height: 19px;
+  }
+  .evo-sidebar {
+    width: 60vw;
+    max-width: 220px;
+    min-width: 160px;
+  }
+  .evo-titlebar {
+    height: 32px;
+  }
+  .tb-dots {
+    display: none;
+  }
+  .tb-center {
+    position: static;
+    transform: none;
+    flex: 1;
+    justify-content: flex-start;
+    padding-left: 8px;
+  }
+  .evo-statusbar {
+    font-size: 11px;
+  }
+  .sb-item {
+    padding: 0 5px;
+  }
+  .auth-card {
+    max-width: 100%;
+    padding: 28px 22px 22px;
+  }
+  .evo-home {
+    padding: 20px 16px 40px;
+  }
+  .home-header-actions {
+    gap: 4px;
+  }
+  .home-action {
+    padding: 6px 10px;
+  }
+  .home-action span {
+    display: none;
+  }
+  .home-action svg {
+    width: 17px;
+    height: 17px;
+  }
 }

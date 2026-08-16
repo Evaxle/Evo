@@ -2,7 +2,7 @@ import { icons } from '../core/icons';
 import { showModal } from './Modal';
 import { toast } from './Toast';
 import { listProjects, deleteProject, renameProject, getGitHubLink } from '../lib/cloud';
-import { listRepos, githubConfigured, linkGitHubAccount, type GitHubRepo } from '../lib/github';
+import { listRepos, type GitHubRepo } from '../lib/github';
 import type { WorkspaceMeta } from '../core/types';
 
 export interface HomeScreenOptions {
@@ -22,6 +22,8 @@ export class HomeScreen {
   opts: HomeScreenOptions;
   private gridEl!: HTMLElement;
   private githubEl!: HTMLElement;
+  private gridRootEl!: HTMLElement;
+  private githubColEl!: HTMLElement;
   private localWorkspaces: WorkspaceMeta[] = [];
 
   constructor(
@@ -156,48 +158,28 @@ export class HomeScreen {
     const wrap = this.githubEl;
     wrap.innerHTML = '';
 
-    if (!githubConfigured()) {
-      const note = document.createElement('div');
-      note.className = 'home-github-note';
-      note.textContent = 'GitHub is not configured yet. Add VITE_GITHUB_CLIENT_ID to enable repository syncing.';
-      wrap.appendChild(note);
-      return;
-    }
-
     const link = await getGitHubLink();
 
+    // Only GitHub accounts get a GitHub section here. Regular accounts have
+    // no connect/link GitHub UI at all.
     if (!link?.token) {
-      const card = document.createElement('div');
-      card.className = 'home-github-card';
-      card.innerHTML = `
-        <div class="hg-icon">${icons['source-control']}</div>
-        <div class="hg-info">
-          <span class="hg-title">GitHub</span>
-          <span class="hg-desc">Link your account to load and commit repositories.</span>
-        </div>
-        <button class="hg-btn">Link GitHub</button>
-      `;
-      card.querySelector<HTMLButtonElement>('.hg-btn')!.addEventListener('click', () => void this.linkGitHub());
-      wrap.appendChild(card);
+      this.githubColEl.classList.add('hidden');
+      this.gridRootEl.classList.add('projects-only');
       return;
     }
+
+    this.githubColEl.classList.remove('hidden');
+    this.gridRootEl.classList.remove('projects-only');
 
     const header = document.createElement('div');
     header.className = 'home-github-linked';
     header.innerHTML = `
       <div class="hg-icon">${icons['source-control']}</div>
       <div class="hg-info">
-        <span class="hg-title">Linked as <b>@${link.username || 'unknown'}</b></span>
-        <span class="hg-desc">Choose a repository to load into Evo.</span>
+        <span class="hg-title">Signed in with <b>@${link.username || 'GitHub'}</b></span>
+        <span class="hg-desc">Open a repository to start editing and committing.</span>
       </div>
-      <button class="hg-btn hg-btn-ghost">Unlink</button>
     `;
-    header.querySelector<HTMLButtonElement>('.hg-btn-ghost')!.addEventListener('click', async () => {
-      const { setGitHubLink } = await import('../lib/cloud');
-      await setGitHubLink(null);
-      toast('GitHub unlinked', 'info');
-      void this.renderGitHub();
-    });
     wrap.appendChild(header);
 
     const repoList = document.createElement('div');
@@ -237,17 +219,6 @@ export class HomeScreen {
     return row;
   }
 
-  private async linkGitHub(): Promise<void> {
-    toast('Opening GitHub… authorize in the new window/tab.', 'info');
-    const result = await linkGitHubAccount();
-    if (result.ok) {
-      toast(`Linked GitHub as @${result.username}`, 'success');
-    } else {
-      toast(result.error ?? 'Failed to link GitHub', 'error', 6000);
-    }
-    void this.renderGitHub();
-  }
-
   private renderShell(): void {
     this.el.innerHTML = `
       <header class="home-header">
@@ -283,6 +254,8 @@ export class HomeScreen {
 
     this.gridEl = this.el.querySelector<HTMLElement>('.home-projects-list')!;
     this.githubEl = this.el.querySelector<HTMLElement>('.home-github-box')!;
+    this.gridRootEl = this.el.querySelector<HTMLElement>('.home-grid')!;
+    this.githubColEl = this.el.querySelector<HTMLElement>('.home-github-col')!;
 
     this.el.querySelector<HTMLElement>('[data-act="new"]')!.addEventListener('click', () => void this.newProject());
     this.el.querySelector<HTMLElement>('[data-act="folder"]')!.addEventListener('click', () => this.opts.onOpenLocalFolder());

@@ -58,6 +58,8 @@ export const icons: Record<string, string> = {
     svg('<path d="M8 1.5L1.5 7H3v7h3.5v-4h3V14H13V7h1.5L8 1.5z" fill="currentColor"/>'),
   branch:
     svg('<circle cx="5" cy="3" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="5" cy="13" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 5v6M7 13h4a2 2 0 0 0 2-2v-1" stroke="currentColor" stroke-width="1.5"/>'),
+  github:
+    svg('<path d="M8 0C3.6 0 0 3.6 0 8c0 3.5 2.3 6.5 5.5 7.6.4.1.5-.2.5-.4v-1.5c-2.2.5-2.7-1.1-2.7-1.1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.3.9 1.3.9.7 1.3 1.9.9 2.4.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.2-.1-.2-.4-1 .1-2 0 0 .7-.2 2.2.8.6-.2 1.3-.3 2-.3s1.4.1 2 .3c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2 .5.6.8 1.4.8 2.2 0 3.1-1.9 3.8-3.7 4 .3.3.6.8.6 1.6v2.3c0 .2.1.5.5.4C13.7 14.5 16 11.5 16 8c0-4.4-3.6-8-8-8z"/>'),
   sync:
     svg('<path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M12 1.5v3h-3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>'),
   ellipsis: svg('<circle cx="3.5" cy="8" r="1.2" fill="currentColor"/><circle cx="8" cy="8" r="1.2" fill="currentColor"/><circle cx="12.5" cy="8" r="1.2" fill="currentColor"/>'),
