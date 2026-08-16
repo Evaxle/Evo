@@ -50,6 +50,7 @@ import {
   setGitHubLink,
 } from './lib/cloud';
 import { listRepos, loadRepoTree } from './lib/github';
+import { getOpenCodeStatus } from './lib/opencode';
 import type { User } from '@supabase/supabase-js';
 import type { FSNode } from './core/types';
 
@@ -168,7 +169,11 @@ async function boot(): Promise<void> {
     (view) => {
       if (view) {
         sidebar.setView(view, viewRegistry[view]);
-        if (view === 'source-control') void githubView.render();
+        if (view === 'source-control') {
+          void githubView.render().then(() => {
+            if (githubView.getSession()) githubView.focusCommit();
+          });
+        }
       } else {
         sidebar.setView(null, null);
       }
@@ -533,7 +538,9 @@ async function boot(): Promise<void> {
         if (n.type === 'file') snapshot.set(path, n.content);
         else n.children?.forEach((c) => walk(c, path));
       };
-      walk(tree, '');
+      // Skip the root's own name so paths align with the virtual FS
+      // (getPath/getNodeByPath treat the root as `/`).
+      tree.children?.forEach((c) => walk(c, ''));
 
       repoSession = { owner, repo, branch, snapshot };
       githubView.setSession(repoSession);
@@ -703,13 +710,16 @@ async function boot(): Promise<void> {
     });
     commands.register({
       id: 'workbench.action.openGitHub',
-      title: 'Open GitHub',
+      title: 'Open Source Control',
       category: 'View',
+      keybinding: 'Ctrl+Shift+G',
       run: () => {
         showEditor();
         activityBar.setActive('source-control');
         sidebar.setView('source-control', githubView.el);
-        void githubView.render();
+        void githubView.render().then(() => {
+          if (githubView.getSession()) githubView.focusCommit();
+        });
       },
     });
     commands.register({
@@ -796,6 +806,12 @@ async function boot(): Promise<void> {
       category: 'GitHub',
       run: () => void pickRepo(),
     });
+    commands.register({
+      id: 'workbench.action.showStatus',
+      title: 'Show Ports & Server Status',
+      category: 'View',
+      run: () => void showServerStatus(),
+    });
   }
 
   // ---- Command helpers ---------------------------------------------------
@@ -859,6 +875,47 @@ async function boot(): Promise<void> {
     activityBar.setActive(view);
     sidebar.setView(view, viewRegistry[view]);
     if (view === 'search') searchView.focus();
+  }
+
+  async function showServerStatus(): Promise<void> {
+    try {
+      const s = await getOpenCodeStatus();
+      const rows = [
+        { id: 'port', label: 'Main server port', description: String(s.port ?? '—') },
+        {
+          id: 'oc',
+          label: 'opencode port',
+          description: String(s.opencodePort ?? '—'),
+        },
+        {
+          id: 'oc-v',
+          label: 'opencode version',
+          description: s.version ?? '—',
+        },
+        {
+          id: 'term',
+          label: 'Terminal bridge',
+          description: s.terminal ? 'ready' : 'off',
+        },
+        {
+          id: 'ws',
+          label: 'opencode workspace',
+          description: s.workspaceDir ?? '—',
+        },
+      ];
+      showQuickPick({
+        placeholder: 'Ports & server status (Esc to close)',
+        items: rows.map((r) => ({
+          id: r.id,
+          label: r.label,
+          description: r.description,
+          icon: icons.terminal,
+          onSelect: () => {},
+        })),
+      });
+    } catch {
+      toast('Bridge unavailable — run `npm run dev`.', 'error');
+    }
   }
 
   function newFile(): void {
@@ -1133,15 +1190,12 @@ async function boot(): Promise<void> {
   });
 
   // ---- Keyboard shortcuts ------------------------------------------------
+  // Registered in the capture phase so they fire even when an inner element
+  // (Monaco editor, xterm, a text input) handles keydown first.
   const chordState = { active: false, time: 0 };
   window.addEventListener('keydown', (e) => {
     const ctrl = e.ctrlKey || e.metaKey;
     const key = e.key.toLowerCase();
-    const target = e.target as HTMLElement;
-    const inInput =
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.isContentEditable;
 
     if (ctrl && key === 'k') {
       chordState.active = true;
@@ -1162,7 +1216,9 @@ async function boot(): Promise<void> {
     }
     chordState.active = false;
 
-    // Terminal shortcuts work even while typing in the editor / xterm.
+    // All shortcuts below work globally, like VS Code, even while the
+    // editor or a text input has focus (Ctrl+Shift+P, Ctrl+P, Ctrl+S, …).
+
     if (ctrl && e.shiftKey && key === '`') {
       e.preventDefault();
       void commands.execute('workbench.action.terminal.new');
@@ -1173,8 +1229,6 @@ async function boot(): Promise<void> {
       void commands.execute('workbench.action.terminal.toggle');
       return;
     }
-
-    if (inInput) return;
 
     if (ctrl && e.shiftKey && key === 'p') {
       e.preventDefault();
@@ -1206,6 +1260,12 @@ async function boot(): Promise<void> {
     } else if (ctrl && e.shiftKey && key === 'f') {
       e.preventDefault();
       void commands.execute('view.switchToSearch');
+    } else if (ctrl && e.shiftKey && key === 'g') {
+      e.preventDefault();
+      void commands.execute('workbench.action.openGitHub');
+    } else if (ctrl && e.shiftKey && key === 'e') {
+      e.preventDefault();
+      void commands.execute('view.switchToExplorer');
     } else if (ctrl && key === 'tab') {
       e.preventDefault();
       cycleTabs(1);
@@ -1213,7 +1273,7 @@ async function boot(): Promise<void> {
       e.preventDefault();
       cycleTabs(-1);
     }
-  });
+  }, true);
 
   function cycleTabs(dir: number): void {
     const infos = editor.tabInfos();

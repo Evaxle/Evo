@@ -77,7 +77,9 @@ export class ExplorerView {
 
   private renderNode(node: FSNode, parent: HTMLElement, depth: number): void {
     if (node.type === 'folder') {
-      const isOpen = this.expanded.has(node.id);
+      // The workspace root (whatever its id) is always shown expanded, so
+      // files are visible right after opening a project/folder/repo.
+      const isOpen = node.id === this.fs.root.id || this.expanded.has(node.id);
       const row = document.createElement('div');
       row.className = 'tree-row folder-row';
       row.dataset.id = node.id;

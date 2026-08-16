@@ -21,6 +21,10 @@ export function opencodePlugin(opts: OpenCodePluginOptions = {}): Plugin {
   function install(server: ViteDevServer): void {
     void bridge.start();
     if (server.httpServer) bridge.installUpgradeHandler(server.httpServer);
+    server.httpServer?.once('listening', () => {
+      const addr = server.httpServer?.address();
+      if (addr && typeof addr === 'object') bridge.setPort(addr.port);
+    });
     server.middlewares.use((req, res, next) => {
       void bridge.handleHttp(req, res).then((handled) => {
         if (!handled) next();

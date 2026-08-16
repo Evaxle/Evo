@@ -22,6 +22,7 @@ export class GitHubView {
   el: HTMLElement;
   private bodyEl: HTMLElement;
   private session: RepoSession | null = null;
+  private commitInput: HTMLInputElement | null = null;
 
   constructor(
     private root: HTMLElement,
@@ -50,6 +51,11 @@ export class GitHubView {
 
   getSession(): RepoSession | null {
     return this.session;
+  }
+
+  /** Focus the commit message box so a keyboard-only user can start typing. */
+  focusCommit(): void {
+    this.commitInput?.focus();
   }
 
   async render(): Promise<void> {
@@ -124,14 +130,15 @@ export class GitHubView {
       commitWrap.className = 'github-commit';
       const input = document.createElement('input');
       input.className = 'github-commit-input';
-      input.placeholder = 'Message';
+      input.placeholder = 'Message (press Enter to commit)';
       input.spellcheck = false;
       const btn = document.createElement('button');
       btn.className = 'github-btn github-btn-commit';
       btn.textContent = 'Commit & Push';
-      btn.addEventListener('click', async () => {
+      const doCommit = async () => {
         if (!input.value.trim()) {
           toast('Enter a commit message first', 'warning');
+          input.focus();
           return;
         }
         btn.disabled = true;
@@ -154,7 +161,15 @@ export class GitHubView {
         } else {
           toast(result.error ?? 'Commit failed', 'error', 6000);
         }
+      };
+      btn.addEventListener('click', () => void doCommit());
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          void doCommit();
+        }
       });
+      this.commitInput = input;
       commitWrap.appendChild(input);
       commitWrap.appendChild(btn);
       changes.appendChild(commitWrap);
@@ -181,7 +196,9 @@ export class GitHubView {
         node.children?.forEach((c) => walk(c, path));
       }
     };
-    walk(this.fs.root, '');
+    // Skip the root's own name so paths align with the virtual FS
+    // (getPath/getNodeByPath treat the root as `/`).
+    this.fs.root.children?.forEach((c) => walk(c, ''));
 
     for (const [path] of snapshot) {
       if (!this.fs.getNodeByPath(path)) {
@@ -199,7 +216,7 @@ export class GitHubView {
       if (node.type === 'file') snap.set(path, node.content);
       else node.children?.forEach((c) => walk(c, path));
     };
-    walk(this.fs.root, '');
+    this.fs.root.children?.forEach((c) => walk(c, ''));
     this.session.snapshot = snap;
   }
 }

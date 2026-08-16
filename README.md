@@ -77,6 +77,30 @@ current workspace and have the edits applied straight back into the editor.
 > needs a local dev server. Guard rails: files with unsaved changes aren't
 > overwritten, and removed files are deleted from the workspace.
 
+## Keyboard shortcuts (program without the mouse)
+
+All shortcuts work globally, even while the editor or a text box has focus.
+
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+Shift+P` / `F1` | Command palette (run any command, incl. terminal/ports) |
+| `Ctrl+P` | Quick open file |
+| `Ctrl+Shift+F` | Search |
+| `Ctrl+Shift+G` | Source control (focuses the commit message box) |
+| `Ctrl+\`` | Toggle terminal panel |
+| `Ctrl+Shift+\`` | New terminal |
+| `Ctrl+Shift+E` | Explorer |
+| `Ctrl+N` | New file |
+| `Ctrl+S` / `Ctrl+K S` | Save / Save all |
+| `Ctrl+W` | Close tab |
+| `Ctrl+Tab` / `Ctrl+Shift+Tab` | Cycle tabs |
+| `Ctrl+B` | Toggle sidebar |
+| `Ctrl+,` | Settings |
+
+From the command palette you can also run **Show Ports & Server Status** to see
+the main server port, the opencode port, the terminal bridge and the workspace
+dir at a glance.
+
 ## Setup: Vercel
 
 Add these environment variables to the project (Settings → Environment Variables):

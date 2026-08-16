@@ -8,8 +8,12 @@ import type { FSNode } from '../core/types';
 export interface OpenCodeStatus {
   running: boolean;
   port?: number;
+  opencodePort?: number;
   version?: string;
   error?: string;
+  workspaceDir?: string;
+  shell?: string;
+  terminal: boolean;
 }
 
 export interface OpenCodeSession {
