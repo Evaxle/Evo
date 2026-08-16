@@ -1694,6 +1694,12 @@ kbd {
   .evo-quick-overlay {
     padding-top: 40px;
   }
+  .evo-auth {
+    padding: 20px;
+  }
+  .evo-home {
+    padding: 24px 20px 48px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1732,6 +1738,26 @@ kbd {
   .sb-item {
     padding: 0 5px;
   }
+  .auth-card {
+    max-width: 100%;
+    padding: 28px 22px 22px;
+  }
+  .evo-home {
+    padding: 20px 16px 40px;
+  }
+  .home-header-actions {
+    gap: 4px;
+  }
+  .home-action {
+    padding: 6px 10px;
+  }
+  .home-action span {
+    display: none;
+  }
+  .home-action svg {
+    width: 17px;
+    height: 17px;
+  }
 }
 
 /* ---------- Top-level screen roots ---------- */
@@ -1741,16 +1767,16 @@ kbd {
   min-height: 0;
   overflow-y: auto;
 }
-.evo-auth-root.hidden,
-.evo-home-root.hidden {
-  display: none;
-}
 .evo-shell-title.hidden,
 .evo-body.hidden,
 .evo-shell-status.hidden {
   display: none;
 }
 
+.evo-app > .evo-auth-root.hidden,
+.evo-app > .evo-home-root.hidden {
+  display: none;
+}
 .evo-app > .evo-auth-root,
 .evo-app > .evo-home-root {
   flex: 1;
@@ -1770,6 +1796,7 @@ kbd {
 .auth-card {
   width: 400px;
   max-width: 94vw;
+  margin: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
