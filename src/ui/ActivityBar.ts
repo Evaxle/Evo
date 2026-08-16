@@ -2,7 +2,14 @@ import { icons } from '../core/icons';
 import { commands } from '../core/commands';
 import { showContextMenu } from './ContextMenu';
 
-export type ViewId = 'home' | 'explorer' | 'search' | 'source-control' | 'run' | 'extensions';
+export type ViewId =
+  | 'home'
+  | 'explorer'
+  | 'search'
+  | 'source-control'
+  | 'run'
+  | 'extensions'
+  | 'assistant';
 
 export class ActivityBar {
   private el: HTMLElement;
@@ -31,6 +38,7 @@ export class ActivityBar {
     this.addButton(top, 'source-control', 'source-control', 'Source Control');
     this.addButton(top, 'run', 'run', 'Run and Debug');
     this.addButton(top, 'extensions', 'extensions', 'Extensions');
+    this.addButton(top, 'assistant', 'assistant', 'Assistant');
 
     const bottom = document.createElement('div');
     bottom.className = 'ab-bottom';

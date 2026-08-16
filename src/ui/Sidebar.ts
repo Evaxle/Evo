@@ -14,6 +14,7 @@ export class Sidebar {
     'source-control': 'Source Control',
     run: 'Run and Debug',
     extensions: 'Extensions',
+    assistant: 'Assistant',
   };
 
   private static WIDTH_KEY = 'evo.sidebar.width';

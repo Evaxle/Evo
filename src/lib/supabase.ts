@@ -10,7 +10,15 @@ export const SUPABASE_ANON_KEY =
 
 export const supabase: SupabaseClient | null =
   SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        // Persist the session (localStorage) so users stay signed in across
+        // page reloads, and keep refreshing the access token in the background.
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
+      })
     : null;
 
 export const cloudEnabled = supabase !== null;

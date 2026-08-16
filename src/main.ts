@@ -17,6 +17,8 @@ import { WelcomeView } from './ui/WelcomeView';
 import { AuthScreen } from './ui/AuthScreen';
 import { HomeScreen } from './ui/HomeScreen';
 import { GitHubView, type RepoSession } from './ui/GitHubView';
+import { AssistantView } from './ui/AssistantView';
+import { TerminalPanel } from './ui/TerminalPanel';
 import { showQuickPick } from './ui/QuickPick';
 import { showSettings } from './ui/SettingsModal';
 import { showModal } from './ui/Modal';
@@ -83,10 +85,13 @@ async function boot(): Promise<void> {
   editorHost.className = 'evo-editor-host';
   const welcomeRoot = document.createElement('div');
   welcomeRoot.className = 'evo-welcome-root';
+  const panelRoot = document.createElement('div');
+  panelRoot.className = 'evo-panel-root hidden';
   editorArea.appendChild(tabsRoot);
   editorArea.appendChild(editorHost);
   editorArea.appendChild(welcomeRoot);
   main.appendChild(editorArea);
+  main.appendChild(panelRoot);
   const statusRoot = document.createElement('div');
   statusRoot.className = 'evo-shell-status';
 
@@ -140,7 +145,10 @@ async function boot(): Promise<void> {
 
   const explorer = new ExplorerView(sidebarRoot, fs, openFile, moveNode);
   const githubView = new GitHubView(sidebarRoot, fs, openFile);
-
+  const assistantView = new AssistantView(sidebarRoot, fs, {
+    onOpenFile: (nodeId) => openFile(nodeId),
+    onApplyRemoteRoot: (root) => applyRemoteRoot(root),
+  });
   const viewRegistry: Record<ViewId, HTMLElement> = {
     home: placeholderView('Home', 'Go back to your projects.', icons.home),
     explorer: explorer.el,
@@ -152,6 +160,7 @@ async function boot(): Promise<void> {
       'The marketplace is coming soon.',
       icons.extensions,
     ),
+    assistant: assistantView.el,
   };
 
   const activityBar = new ActivityBar(
@@ -169,7 +178,10 @@ async function boot(): Promise<void> {
   activityBar.setActive('explorer');
   sidebar.setView('explorer', explorer.el);
   const tabs = new EditorTabs(tabsRoot, editor);
-  const statusBar = new StatusBar(statusRoot, editor, settings, fs);
+  const terminalPanel = new TerminalPanel(panelRoot);
+  const statusBar = new StatusBar(statusRoot, editor, settings, fs, () =>
+    terminalPanel.toggle(),
+  );
   void tabs;
   void statusBar;
   const welcome = new WelcomeView(welcomeRoot, workspaces, (id) => {
@@ -344,6 +356,94 @@ async function boot(): Promise<void> {
     bus.emit(EV.FS_CHANGED, fs.root);
     titleBar.setWorkspace(name);
     explorer.render();
+  }
+
+  /**
+   * Merge a workspace tree returned from the opencode bridge back into the
+   * virtual FS. Matches nodes by path so open tabs survive, updates content
+   * in place, creates missing files/folders and deletes removed ones.
+   */
+  function applyRemoteRoot(remote: FSNode): void {
+    const pathMap = new Map<string, FSNode>();
+    const walk = (node: FSNode, prefix: string): void => {
+      const rel = prefix ? `${prefix}/${node.name}` : node.name;
+      if (node.type === 'file' || node.children?.length) pathMap.set(rel, node);
+      node.children?.forEach((c) => walk(c, rel));
+    };
+    // The remote root IS the workspace root; don't include its own name as a
+    // path segment so paths align with the virtual FS.
+    remote.children?.forEach((c) => walk(c, ''));
+
+    const existingPaths = new Set<string>();
+    const collectExisting = (node: FSNode, prefix: string): void => {
+      const rel = prefix ? `${prefix}/${node.name}` : node.name;
+      if (node.type === 'file') existingPaths.add(rel);
+      node.children?.forEach((c) => collectExisting(c, rel));
+    };
+    collectExisting(fs.root, '');
+
+    let created = 0;
+    let updated = 0;
+    const changedNodeIds: string[] = [];
+
+    for (const [rel, node] of pathMap) {
+      if (node.type !== 'file') continue;
+      const existing = fs.getNodeByPath('/' + rel);
+      if (existing && existing.type === 'file') {
+        if (existing.content !== node.content) {
+          fs.updateContent(existing.id, node.content);
+          updated++;
+          changedNodeIds.push(existing.id);
+        }
+      } else {
+        // create missing parent folders then the file
+        const parts = rel.split('/');
+        const name = parts.pop()!;
+        let parentId = 'root';
+        let currentRel = '';
+        for (const part of parts) {
+          currentRel = currentRel ? `${currentRel}/${part}` : part;
+          const parent = fs.getNodeByPath('/' + currentRel);
+          if (parent && parent.type === 'folder') {
+            parentId = parent.id;
+          } else {
+            const createdFolder = fs.createFolder(parentId, part);
+            if (createdFolder) parentId = createdFolder.id;
+          }
+        }
+        const createdFile = fs.createFile(parentId, name, node.content);
+        if (createdFile) {
+          created++;
+          changedNodeIds.push(createdFile.id);
+        }
+      }
+    }
+
+    // delete files that no longer exist in the remote tree
+    let deleted = 0;
+    for (const rel of existingPaths) {
+      if (pathMap.has(rel)) continue;
+      const node = fs.getNodeByPath('/' + rel);
+      if (node && node.type === 'file' && !node.external) {
+        fs.delete(node.id);
+        deleted++;
+      }
+    }
+
+    for (const id of changedNodeIds) editor.reloadContent(id);
+    editor.reconcile();
+    fs.persist();
+    bus.emit(EV.FS_CHANGED, fs.root);
+    explorer.render();
+
+    if (created || updated || deleted) {
+      toast(
+        `Applied opencode changes: ${updated} updated, ${created} created, ${deleted} deleted`,
+        'success',
+      );
+    } else {
+      toast('No file changes from opencode.', 'info');
+    }
   }
 
   async function openCloudProject(id: string): Promise<void> {
@@ -617,6 +717,47 @@ async function boot(): Promise<void> {
       title: 'Reset Local Data',
       category: 'Workspace',
       run: () => void resetData(),
+    });
+    commands.register({
+      id: 'workbench.action.openAssistant',
+      title: 'Open Assistant',
+      category: 'View',
+      run: () => {
+        showEditor();
+        activityBar.setActive('assistant');
+        sidebar.setView('assistant', assistantView.el);
+        void assistantView.refresh();
+      },
+    });
+    commands.register({
+      id: 'workbench.action.terminal.toggle',
+      title: 'Toggle Terminal',
+      category: 'Terminal',
+      keybinding: 'Ctrl+`',
+      run: () => {
+        showEditor();
+        terminalPanel.toggle();
+      },
+    });
+    commands.register({
+      id: 'workbench.action.terminal.new',
+      title: 'New Terminal',
+      category: 'Terminal',
+      keybinding: 'Ctrl+Shift+`',
+      run: () => {
+        showEditor();
+        terminalPanel.newTerminal();
+      },
+    });
+    commands.register({
+      id: 'workbench.action.terminal.clear',
+      title: 'Clear Terminal',
+      category: 'Terminal',
+      run: () => {
+        showEditor();
+        terminalPanel.toggle(true);
+        terminalPanel.clearActive();
+      },
     });
     commands.register({
       id: 'workbench.action.preview',
@@ -1020,6 +1161,19 @@ async function boot(): Promise<void> {
       return;
     }
     chordState.active = false;
+
+    // Terminal shortcuts work even while typing in the editor / xterm.
+    if (ctrl && e.shiftKey && key === '`') {
+      e.preventDefault();
+      void commands.execute('workbench.action.terminal.new');
+      return;
+    }
+    if (ctrl && key === '`') {
+      e.preventDefault();
+      void commands.execute('workbench.action.terminal.toggle');
+      return;
+    }
+
     if (inInput) return;
 
     if (ctrl && e.shiftKey && key === 'p') {

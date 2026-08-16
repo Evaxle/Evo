@@ -374,4 +374,22 @@ export class EditorManager {
     }
     bus.emit(EV.TABS_CHANGED, this.tabInfos());
   }
+
+  /**
+   * Reload an open tab's editor model from the virtual FS (used after
+   * opencode/remote edits). Skipped when the tab has unsaved changes.
+   */
+  reloadContent(nodeId: string): void {
+    const node = this.fs.getNode(nodeId);
+    if (!node || node.type !== 'file') return;
+    const tab = this.tabs.find((t) => t.nodeId === nodeId);
+    if (!tab || tab.dirty) return;
+    const uri = uriForPath(this.fs.getPath(nodeId));
+    const model = monaco.editor.getModel(uri);
+    if (!model) return;
+    if (model.getValue() === node.content) return;
+    this.suppressDirty = true;
+    model.pushEditOperations([], [{ range: model.getFullModelRange(), text: node.content }], () => null);
+    this.suppressDirty = false;
+  }
 }

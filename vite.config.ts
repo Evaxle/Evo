@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { opencodePlugin } from './opencode-plugin';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   root: dir,
+  plugins: [opencodePlugin()],
   base: './',
   build: {
     outDir: 'dist',

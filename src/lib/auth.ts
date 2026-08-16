@@ -127,8 +127,18 @@ export async function logout(): Promise<void> {
 
 export async function getSessionUser(): Promise<User | null> {
   if (!supabase) return null;
+  // Restore the persisted session from localStorage first.
   const { data } = await supabase.auth.getSession();
-  return data.session?.user ?? null;
+  if (!data.session) return null;
+  // Validate the token against Supabase; this also refreshes the access token
+  // if it expired while the page was closed, so a signed-in user is never
+  // forced back to the login screen on reload.
+  const { data: userData, error } = await supabase.auth.getUser();
+  if (error) {
+    if (error.status === 401) return null;
+    return data.session.user;
+  }
+  return userData.user;
 }
 
 /** Returns the GitHub access token when the session was created via GitHub OAuth. */

@@ -52,6 +52,31 @@ edit files and commit & push from Evo.
 
 > The old `VITE_GITHUB_CLIENT_ID` env var (used for device-flow linking) is no longer required and can be removed.
 
+## Setup: Assistant (opencode)
+
+The **Assistant** panel (activity bar → chat icon) embeds [opencode](https://opencode.ai)
+directly in Evo. It talks to a headless `opencode serve` process that the Vite dev
+server starts automatically, so you can ask it to fix, refactor or add files in the
+current workspace and have the edits applied straight back into the editor.
+
+1. Install opencode: `curl -fsSL https://opencode.ai/install | bash` (or `npm i -g opencode-ai`).
+2. Make sure it's on your `PATH`, then start Evo with `npm run dev`.
+   The bridge spawns `opencode serve` on port 4096 (next free port if busy) and
+   reports its status in the panel header.
+3. Open the **Assistant** panel and connect an API key:
+   - Pick a provider from the dropdown (openai, anthropic, google, …),
+   - paste your key and press **Save key**. Connected providers show as chips
+     (with a ✕ to remove).
+4. Choose a model from the list (defaults to the provider's preferred model).
+5. Type a prompt and press **Enter**. Before running, Evo materializes the current
+   workspace to a temp directory, opencode edits those files, and afterwards Evo
+   pulls the changes back into your workspace — updated in the editor and explorer.
+
+> The opencode workspace is synced to `<os.tmpdir()>/evo-opencode-workspace`.
+> The bridge only runs during `npm run dev` (it's a Vite plugin), so the Assistant
+> needs a local dev server. Guard rails: files with unsaved changes aren't
+> overwritten, and removed files are deleted from the workspace.
+
 ## Setup: Vercel
 
 Add these environment variables to the project (Settings → Environment Variables):

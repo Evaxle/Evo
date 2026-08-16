@@ -15,6 +15,7 @@ export class StatusBar {
     private editor: EditorManager,
     private settings: SettingsStore,
     private fs: FileSystem,
+    private onTerminal?: () => void,
   ) {
     this.el = document.createElement('footer');
     this.el.className = 'evo-statusbar';
@@ -105,6 +106,15 @@ export class StatusBar {
 
     const encoding = this.item('UTF-8', 'Encoding');
     this.rightEl.appendChild(encoding);
+
+    if (this.onTerminal) {
+      const terminal = document.createElement('span');
+      terminal.className = 'sb-item clickable';
+      terminal.title = 'Toggle Terminal (Ctrl+`)';
+      terminal.innerHTML = icons.terminal;
+      terminal.addEventListener('click', () => this.onTerminal?.());
+      this.rightEl.appendChild(terminal);
+    }
 
     const notify = document.createElement('span');
     notify.className = 'sb-item';

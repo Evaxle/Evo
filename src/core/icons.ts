@@ -89,6 +89,12 @@ export const icons: Record<string, string> = {
     svg('<path d="M4.5 12a3 3 0 1 1 .3-6A4 4 0 0 1 12 7.5a2.5 2.5 0 0 1-.5 4.5H4.5z" stroke="currentColor" stroke-width="1.3" fill="none"/>'),
   spinner:
     svg('<path d="M8 1.5a6.5 6.5 0 1 0 6.5 6.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>'),
+  assistant:
+    svg('<path d="M2.5 3.5h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-6l-2.5 2.5v-2.5h-2.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z" fill="currentColor"/><path d="M5.5 6h5M5.5 8.5h3" stroke="#1e1e1e" stroke-width="1.2" stroke-linecap="round"/>'),
+  send:
+    svg('<path d="M2 8l12-6-3 12-3-4.5L2 8z" fill="currentColor"/>'),
+  clear:
+    svg('<path d="M13 3H6L2.5 8 6 13h7v-2H7v-6h6V3z" fill="currentColor"/><path d="M10 3v8" stroke="currentColor" stroke-width="1"/>'),
 };
 
 export type IconName = keyof typeof icons;
