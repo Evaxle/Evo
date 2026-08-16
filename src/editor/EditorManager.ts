@@ -19,6 +19,8 @@ export class EditorManager {
   private saveInFlight = new Set<string>();
   private uriToNode = new Map<string, string>();
   private suppressDirty = false;
+  private resizeObserver: ResizeObserver | null = null;
+  private layoutFrame = 0;
 
   constructor(
     private fs: FileSystem,
@@ -38,7 +40,6 @@ export class EditorManager {
       tabSize: this.settings.settings.tabSize,
       renderWhitespace: this.settings.settings.renderWhitespace,
       lineNumbers: this.settings.settings.lineNumbers,
-      automaticLayout: true,
       scrollBeyondLastLine: false,
       smoothScrolling: true,
       cursorBlinking: 'smooth',
@@ -64,6 +65,24 @@ export class EditorManager {
     this.editor.onDidChangeCursorPosition(() => {
       bus.emit(EV.STATUS_UPDATED, this.statusInfo());
     });
+
+    // Keep the editor sized to its container (sidebar drag, window scale,
+    // panel toggles, fonts loading). automaticLayout only watches window
+    // resizes, so observe the actual container instead.
+    this.resizeObserver = new ResizeObserver(() => {
+      if (this.layoutFrame) cancelAnimationFrame(this.layoutFrame);
+      this.layoutFrame = requestAnimationFrame(() => {
+        this.layoutFrame = 0;
+        this.editor.layout();
+      });
+    });
+    this.resizeObserver.observe(this.container);
+
+    // Re-layout once web fonts finish loading (metrics change the measure).
+    if (document.fonts?.ready) {
+      void document.fonts.ready.then(() => this.layout());
+    }
+    window.addEventListener('resize', () => this.layout());
 
     // React to live settings changes.
     this.settings.changed.on((s) => {
@@ -288,6 +307,11 @@ export class EditorManager {
       col: pos?.column ?? 1,
       eol,
     };
+  }
+
+  /** Force a re-layout (used after layout-affecting UI changes). */
+  layout(): void {
+    this.editor.layout();
   }
 
   cursorPosition(): { line: number; col: number } {

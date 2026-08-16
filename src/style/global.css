@@ -45,13 +45,16 @@ body {
 
 #app {
   height: 100vh;
+  height: 100dvh;
 }
 
 .evo-app {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
+  width: 100dvw;
 }
 
 /* ---------- Scrollbars ---------- */
@@ -284,16 +287,43 @@ body {
 }
 
 .evo-sidebar {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 280px;
+  max-width: 600px;
+  min-width: 160px;
   height: 100%;
   background: var(--bg-panel);
   border-right: 1px solid var(--border);
   min-height: 0;
+  transition: width 0.12s ease;
+}
+.evo-sidebar.resizing {
+  transition: none;
 }
 .evo-sidebar.hidden {
   display: none;
+}
+
+.evo-sidebar-resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+  background: transparent;
+}
+.evo-sidebar-resize:hover,
+.evo-sidebar-resize.dragging {
+  background: rgba(79, 193, 255, 0.25);
+}
+body.resizing-sidebar,
+body.resizing-sidebar * {
+  cursor: col-resize !important;
+  user-select: none !important;
 }
 
 .evo-sidebar-header {
@@ -726,6 +756,17 @@ body {
   max-width: 720px;
   margin: 0 auto;
   padding: 48px 24px 80px;
+  animation: welcomeFade 0.25s ease;
+}
+@keyframes welcomeFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .welcome-hero {
@@ -1261,6 +1302,124 @@ kbd {
   color: #8a8a8a;
 }
 
+/* ---------- Drop-to-import overlay ---------- */
+.evo-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+.evo-drop-overlay.show {
+  opacity: 1;
+}
+.evo-drop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 56px;
+  border: 2px dashed var(--accent);
+  border-radius: 14px;
+  background: #252526;
+  color: #d4d4d4;
+  font-size: 15px;
+  font-weight: 600;
+  animation: dropPulse 1.4s ease-in-out infinite, dropIn 0.2s ease;
+}
+.evo-drop-card svg {
+  width: 40px;
+  height: 40px;
+  color: var(--accent-bright);
+}
+@keyframes dropPulse {
+  0%,
+  100% {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 rgba(0, 122, 204, 0);
+  }
+  50% {
+    border-color: var(--accent-bright);
+    box-shadow: 0 0 40px rgba(79, 193, 255, 0.25);
+  }
+}
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---------- Loading overlay ---------- */
+.evo-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.evo-loading-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.evo-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 40px;
+  background: #252526;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.5);
+  animation: loadingIn 0.25s ease;
+}
+@keyframes loadingIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.evo-loading-spinner {
+  display: flex;
+  color: var(--accent-bright);
+}
+.evo-loading-spinner svg {
+  width: 30px;
+  height: 30px;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.evo-loading-message {
+  margin: 0;
+  color: #d4d4d4;
+  font-size: 13px;
+  text-align: center;
+}
+
 /* ---------- Toasts ---------- */
 .evo-toasts {
   position: fixed;
@@ -1410,12 +1569,52 @@ kbd {
 @media (max-width: 700px) {
   .evo-sidebar {
     width: 220px;
+    max-width: 220px;
+    min-width: 160px;
   }
   .evo-welcome {
     padding-top: 24px;
   }
   .evo-preview-overlay {
     padding: 12px;
+  }
+  .evo-tab {
+    min-width: 90px;
+  }
+  .evo-quick-overlay {
+    padding-top: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .evo-activitybar {
+    width: 40px;
+  }
+  .ab-btn {
+    width: 40px;
+    height: 38px;
+  }
+  .ab-btn svg {
+    width: 19px;
+    height: 19px;
+  }
+  .evo-sidebar {
+    width: 60vw;
+    max-width: 220px;
+    min-width: 160px;
+  }
+  .evo-titlebar {
+    height: 32px;
+  }
+  .tb-center {
+    justify-content: flex-start;
+    padding-left: 8px;
+  }
+  .evo-statusbar {
+    font-size: 11px;
+  }
+  .sb-item {
+    padding: 0 5px;
   }
 }
 
@@ -1746,7 +1945,21 @@ kbd {
   border: 1px solid var(--border-light);
   border-radius: 10px;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, transform 0.12s ease;
+  animation: cardIn 0.3s ease both;
+}
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.home-project-card:hover {
+  transform: translateY(-1px);
 }
 .home-project-card:hover {
   border-color: var(--accent);

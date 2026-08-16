@@ -54,17 +54,18 @@ export class HomeScreen {
       const rows = document.createElement('div');
       rows.className = 'home-project-list';
 
+      let idx = 0;
       for (const p of projects) {
         rows.appendChild(this.projectCard(p.name, p.updated_at, {
           onOpen: () => this.opts.onOpenCloudProject(p.id),
           onRename: () => void this.renameCloud(p),
           onDelete: () => void this.deleteCloud(p.id),
-        }));
+        }, idx++));
       }
       for (const w of this.localWorkspaces) {
         rows.appendChild(this.projectCard(w.name, new Date(w.lastOpened).toLocaleDateString(), {
           onOpen: () => this.opts.onOpenLocalWorkspace(w.id),
-        }));
+        }, idx++));
       }
       section.appendChild(rows);
       grid.appendChild(section);
@@ -84,9 +85,11 @@ export class HomeScreen {
     name: string,
     updated: string,
     actions: { onOpen: () => void; onRename?: () => void; onDelete?: () => void },
+    index = 0,
   ): HTMLElement {
     const card = document.createElement('div');
     card.className = 'home-project-card';
+    card.style.animationDelay = `${Math.min(index, 10) * 35}ms`;
     card.innerHTML = `
       <div class="hpc-icon">${icons.folder}</div>
       <div class="hpc-info">

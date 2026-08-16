@@ -21,6 +21,7 @@ import { showQuickPick } from './ui/QuickPick';
 import { showSettings } from './ui/SettingsModal';
 import { showModal } from './ui/Modal';
 import { toast } from './ui/Toast';
+import { showLoading } from './ui/LoadingOverlay';
 import {
   buildTreeFromDropped,
   pickFiles,
@@ -317,53 +318,63 @@ async function boot(): Promise<void> {
   }
 
   async function openCloudProject(id: string): Promise<void> {
-    const p = await getProject(id);
-    if (!p || !p.root) {
-      toast('Project could not be loaded.', 'error');
-      return;
+    const loading = showLoading('Opening project…');
+    try {
+      const p = await getProject(id);
+      if (!p || !p.root) {
+        toast('Project could not be loaded.', 'error');
+        return;
+      }
+      await saveLocalEditorState();
+      applyFsRoot(p.root, p.name);
+      currentCloudProjectId = id;
+      repoSession = null;
+      githubView.setSession(null);
+      const state = await loadCloudEditorState(id);
+      await editor.restoreFromState(state);
+      showEditor();
+      activityBar.setActive('explorer');
+      sidebar.setView('explorer', explorer.el);
+    } finally {
+      loading.done();
     }
-    await saveLocalEditorState();
-    applyFsRoot(p.root, p.name);
-    currentCloudProjectId = id;
-    repoSession = null;
-    githubView.setSession(null);
-    const state = await loadCloudEditorState(id);
-    await editor.restoreFromState(state);
-    showEditor();
-    activityBar.setActive('explorer');
-    sidebar.setView('explorer', explorer.el);
   }
 
   async function createProjectFlow(name: string): Promise<void> {
-    if (signedIn && cloudEnabled) {
-      const root = emptyRoot();
-      root.name = name;
-      const p = await createProject(name, root);
-      if (!p) {
-        toast('Failed to create project.', 'error');
-        return;
+    const loading = showLoading('Creating project…');
+    try {
+      if (signedIn && cloudEnabled) {
+        const root = emptyRoot();
+        root.name = name;
+        const p = await createProject(name, root);
+        if (!p) {
+          toast('Failed to create project.', 'error');
+          return;
+        }
+        currentCloudProjectId = p.id;
+        applyFsRoot(p.root ?? root, name);
+        repoSession = null;
+        githubView.setSession(null);
+        editor.closeAll();
+        showEditor();
+        activityBar.setActive('explorer');
+        sidebar.setView('explorer', explorer.el);
+        toast(`Created project "${name}"`, 'success');
+      } else {
+        await workspaces.createNew(name);
+        await workspaces.save(name);
+        currentCloudProjectId = null;
+        applyFsRoot(fs.root, name);
+        repoSession = null;
+        githubView.setSession(null);
+        editor.closeAll();
+        showEditor();
+        activityBar.setActive('explorer');
+        sidebar.setView('explorer', explorer.el);
+        toast(`Created workspace "${name}"`, 'success');
       }
-      currentCloudProjectId = p.id;
-      applyFsRoot(p.root ?? root, name);
-      repoSession = null;
-      githubView.setSession(null);
-      editor.closeAll();
-      showEditor();
-      activityBar.setActive('explorer');
-      sidebar.setView('explorer', explorer.el);
-      toast(`Created project "${name}"`, 'success');
-    } else {
-      await workspaces.createNew(name);
-      await workspaces.save(name);
-      currentCloudProjectId = null;
-      applyFsRoot(fs.root, name);
-      repoSession = null;
-      githubView.setSession(null);
-      editor.closeAll();
-      showEditor();
-      activityBar.setActive('explorer');
-      sidebar.setView('explorer', explorer.el);
-      toast(`Created workspace "${name}"`, 'success');
+    } finally {
+      loading.done();
     }
   }
 
@@ -380,30 +391,34 @@ async function boot(): Promise<void> {
   }
 
   async function loadRepoIntoEvo(owner: string, repo: string, branch: string): Promise<void> {
-    toast(`Loading ${owner}/${repo}…`, 'info');
-    const tree = await loadRepoTree(owner, repo, branch);
-    if (!tree) {
-      toast('Could not load the repository.', 'error');
-      return;
-    }
-    const snapshot = new Map<string, string>();
-    const walk = (n: FSNode, prefix: string) => {
-      const path = prefix ? `${prefix}/${n.name}` : n.name;
-      if (n.type === 'file') snapshot.set(path, n.content);
-      else n.children?.forEach((c) => walk(c, path));
-    };
-    walk(tree, '');
+    const loading = showLoading(`Loading ${owner}/${repo}…`);
+    try {
+      const tree = await loadRepoTree(owner, repo, branch);
+      if (!tree) {
+        toast('Could not load the repository.', 'error');
+        return;
+      }
+      const snapshot = new Map<string, string>();
+      const walk = (n: FSNode, prefix: string) => {
+        const path = prefix ? `${prefix}/${n.name}` : n.name;
+        if (n.type === 'file') snapshot.set(path, n.content);
+        else n.children?.forEach((c) => walk(c, path));
+      };
+      walk(tree, '');
 
-    repoSession = { owner, repo, branch, snapshot };
-    githubView.setSession(repoSession);
-    currentCloudProjectId = null;
-    applyFsRoot(tree, repo);
-    editor.closeAll();
-    showEditor();
-    activityBar.setActive('source-control');
-    sidebar.setView('source-control', githubView.el);
-    void githubView.render();
-    toast(`Loaded ${owner}/${repo} on ${branch}`, 'success');
+      repoSession = { owner, repo, branch, snapshot };
+      githubView.setSession(repoSession);
+      currentCloudProjectId = null;
+      applyFsRoot(tree, repo);
+      editor.closeAll();
+      showEditor();
+      activityBar.setActive('source-control');
+      sidebar.setView('source-control', githubView.el);
+      void githubView.render();
+      toast(`Loaded ${owner}/${repo} on ${branch}`, 'success');
+    } finally {
+      loading.done();
+    }
   }
 
   async function goHome(): Promise<void> {
@@ -421,6 +436,7 @@ async function boot(): Promise<void> {
 
   // ---- Events ------------------------------------------------------------
   bus.on(EV.WORKSPACE_CHANGED, (name: string) => titleBar.setWorkspace(name));
+  bus.on(EV.SIDEBAR_CHANGED, () => editor.layout());
 
   // ---- Commands ----------------------------------------------------------
   registerCommands();
@@ -875,9 +891,39 @@ async function boot(): Promise<void> {
   }
 
   // ---- OS drag & drop ----------------------------------------------------
+  const dropOverlay = document.createElement('div');
+  dropOverlay.className = 'evo-drop-overlay';
+  dropOverlay.innerHTML = `
+    <div class="evo-drop-card">
+      ${icons.upload}
+      <span>Drop to import into Evo</span>
+    </div>`;
+  let dragDepth = 0;
+
+  const showDropOverlay = () => {
+    dragDepth++;
+    document.body.appendChild(dropOverlay);
+    requestAnimationFrame(() => dropOverlay.classList.add('show'));
+  };
+  const hideDropOverlay = () => {
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) {
+      dropOverlay.classList.remove('show');
+      window.setTimeout(() => dropOverlay.remove(), 250);
+    }
+  };
+
+  window.addEventListener('dragenter', (e) => {
+    if (e.dataTransfer?.types?.includes('Files')) showDropOverlay();
+  });
+  window.addEventListener('dragleave', (e) => {
+    if (!e.dataTransfer?.types?.includes('Files')) return;
+    if (!e.relatedTarget) hideDropOverlay();
+  });
   window.addEventListener('dragover', (e) => e.preventDefault());
   window.addEventListener('drop', async (e) => {
     e.preventDefault();
+    if (e.dataTransfer?.types?.includes('Files')) hideDropOverlay();
     if (!e.dataTransfer?.files.length) return;
     const dropped = await readDroppedDataTransfer(e.dataTransfer);
     if (!dropped.length) return;

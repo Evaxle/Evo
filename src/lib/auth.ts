@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js';
 
 /**
  * Username-only accounts. Supabase Auth is built around email addresses, so we
- * derive a stable synthetic email from the username (`<username>@evo.local`).
+ * derive a stable synthetic email from the username (`<username>@evo.test`).
  * This keeps the sign-up form to just a username and password.
  *
  * The Supabase project must have email confirmation DISABLED
@@ -16,7 +16,9 @@ export function normalizeUsername(raw: string): string {
 }
 
 export function usernameToEmail(username: string): string {
-  return `${normalizeUsername(username)}@evo.local`;
+  // `.test` is an RFC 2606 reserved TLD, so it never resolves to a real
+  // mailbox but passes Supabase's email validation (`.local` is rejected).
+  return `${normalizeUsername(username)}@evo.test`;
 }
 
 export function validateUsername(username: string): string | null {

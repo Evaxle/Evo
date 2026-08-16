@@ -82,6 +82,8 @@ export const icons: Record<string, string> = {
   wand: svg('<path d="M2 14L11 5M12.5 2.5l1 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4 2l.7 1.3L6 4l-1.3.7L4 6l-.7-1.3L2 4l1.3-.7L4 2z" fill="currentColor"/><path d="M10 8l.7 1.3L12 10l-1.3.7L10 12l-.7-1.3L8 10l1.3-.7L10 8z" fill="currentColor"/>'),
   cloud:
     svg('<path d="M4.5 12a3 3 0 1 1 .3-6A4 4 0 0 1 12 7.5a2.5 2.5 0 0 1-.5 4.5H4.5z" stroke="currentColor" stroke-width="1.3" fill="none"/>'),
+  spinner:
+    svg('<path d="M8 1.5a6.5 6.5 0 1 0 6.5 6.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>'),
 };
 
 export type IconName = keyof typeof icons;

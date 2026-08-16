@@ -31,6 +31,7 @@ npm run build                # typecheck + production build into dist/
 2. Run the SQL in `supabase/schema.sql` in the **SQL editor** (creates `profiles`, `projects`, `settings`, `editor_state` with row-level security).
 3. **Auth → Providers → Email**: turn **OFF** "Confirm email" so username/password sign-up logs users straight in.
 4. **Project Settings → API**: copy the project URL and `anon` public key.
+5. Sign-in uses a synthetic `<username>@evo.test` email (an RFC 2606 reserved TLD that passes Supabase's email validation). You must have "Confirm email" **OFF** — no real email is ever sent.
 
 ## Setup: GitHub (load repos + commit)
 
@@ -44,9 +45,9 @@ Add these environment variables to the project (Settings → Environment Variabl
 
 | Variable | Value |
 | --- | --- |
-| `VITE_SUPABASE_URL` | `https://<project>.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | anon public key |
-| `VITE_GITHUB_CLIENT_ID` | GitHub OAuth App client id |
+| `VITE_SUPABASE_URL` | `https://apwfcxwklmfyjymbacnv.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | your anon public key |
+| `VITE_GITHUB_CLIENT_ID` | `Ov23livAYtfmTIb0laeC` |
 
 Then redeploy. `vercel.json` is already configured to build with Vite and serve `dist/`.
 

@@ -3,7 +3,8 @@
 
 -- Usernames are stored as profiles keyed by the Supabase auth user id.
 -- Sign-in uses a synthetic email derived from the username
--- (`<username>@evo.local`) so the form only needs username + password.
+-- (`<username>@evo.test`, RFC 2606 reserved TLD) so the form only needs
+-- username + password.
 
 -- 1. Profiles (one row per user)
 create table if not exists public.profiles (
@@ -18,7 +19,7 @@ create table if not exists public.profiles (
 -- 2. Projects (the full file tree is stored as JSON)
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users (id) on delete cascade,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   name text not null,
   folder_name text not null default 'evo-workspace',
   root jsonb,
@@ -28,7 +29,7 @@ create table if not exists public.projects (
 
 -- 3. User settings
 create table if not exists public.settings (
-  user_id uuid primary key references auth.users (id) on delete cascade,
+  user_id uuid primary key default auth.uid() references auth.users (id) on delete cascade,
   settings jsonb,
   updated_at timestamptz not null default now()
 );
@@ -36,7 +37,7 @@ create table if not exists public.settings (
 -- 4. Open editor tabs per project
 create table if not exists public.editor_state (
   project_id uuid primary key references public.projects (id) on delete cascade,
-  user_id uuid not null references auth.users (id) on delete cascade,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   tabs jsonb,
   updated_at timestamptz not null default now()
 );
